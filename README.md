@@ -1,4 +1,7 @@
 # Capture (Mark) Re-Capture - A Simulation Study
+
+[![DOI](https://zenodo.org/badge/822625163.svg)](https://doi.org/10.5281/zenodo.16580487)
+
 ## Overview
 
 <img align="right" src="CRCSim/CRCSim.png" style="float" width="200">
