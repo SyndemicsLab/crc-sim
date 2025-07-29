@@ -27,7 +27,7 @@ keywords:
   - "Capture Recapture"
   - "CRC"
   - "Public Health"
-abstract: To effectively tackle the overdose crisis, a nuanced understanding of Opioid Use Disorder (OUD) 
+abstract: "To effectively tackle the overdose crisis, a nuanced understanding of Opioid Use Disorder (OUD) 
           prevalence is crucial, both broadly and within targeted cohorts. Healthcare interactions provide 
           estimates but may overlook those outside the healthcare system, leading to underestimation. 
           Capture-recapture (CRC) analysis is valuable in estimating prevalence by addressing underreporting in 
@@ -50,5 +50,5 @@ abstract: To effectively tackle the overdose crisis, a nuanced understanding of 
           appropriate models based on available data. Through contrasting different approaches, 
           we highlight the estimation process for strata-specific prevalence and interpret strengths 
           and limitations of common model selection strategies, enhancing the precision of OUD prevalence 
-          assessments for uniquely stratified data.
+          assessments for uniquely stratified data."
 license: "MIT"
