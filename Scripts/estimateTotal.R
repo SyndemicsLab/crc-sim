@@ -2,11 +2,9 @@ library(data.table)
 
 sex <- fread("../Raw/OUDOrigin_Sex_12SEP2024.csv")
 race <- fread("../Raw/OUDOrigin_Race_12SEP2024.csv")
-#age <- fread("../Raw/OUDOrigin_Twenty_26JUN2024.csv")
 
 sex_list <- c()
 race_list <- c()
-age_list <- c()
 out_list <- c()
 for (i in 1:100) {
   set.seed(2024 + i)
@@ -34,21 +32,6 @@ for (i in 1:100) {
                                                                                                   ifelse(j == 4, "Hispanic", "Other")))))
   } 
   race_est <- rbindlist(race_list)
-  
-#  for(j in unique(age$age_grp_twenty)) {
-#    subDT <- Syndemics::crc(age[age_grp_twenty == j & year == 2021, 
-#                                ][N_ID < 0, N_ID := sample(1:10, 1)],
-#                            "N_ID", c("Casemix", "APCD", "BSAS", "PMP", "Matris", "Death"))
-#    estimate <- subDT$estimate
-#    known <- as.numeric(age[age_grp_twenty == j & year == 2021 & N_ID > 0,
-#                            ][, .(known = sum(N_ID))])
-#    age_list[[j]] <- data.table(estimate = estimate, known = known, group = ifelse(j == 1, "-20", 
-#                                                                                    ifelse(j == 2, "21-40",
-#                                                                                           ifelse(j == 3, "41-60",
-#                                                                                                  ifelse(j == 4, "61-80", "81+")))))
-#  } 
-#  age_est <- rbindlist(age_list)
-  
   out_list[[i]] <- rbindlist(list(race_est, sex_est))
 }
 out_data <- rbindlist(out_list)
