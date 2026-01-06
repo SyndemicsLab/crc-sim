@@ -1,5 +1,9 @@
 # Capture (Mark) Re-Capture - A Simulation Study
 
+## :warning: NOTICE :warning:
+
+This repository is under development and being converted to an analysis repository. The CRC R package is being moved. This is not currently intended for public consumption.
+
 [![DOI](https://zenodo.org/badge/822625163.svg)](https://doi.org/10.5281/zenodo.16580487)
 
 ## Overview
