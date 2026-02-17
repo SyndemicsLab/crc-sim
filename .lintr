@@ -1,0 +1,31 @@
+linters: all_linters(
+    assignment_linter = assignment_linter(operator = c("<-"), allow_trailing = FALSE),
+    backport_linter = backport_linter("4.0.0"),
+    brace_linter = brace_linter(allow_single_line = TRUE),
+    indentation_linter = indentation_linter(indent = 4L),
+    line_length_linter = line_length_linter(length = 80L),
+    object_name_linter = object_name_linter(styles = c("snake_case", "lowercase")),
+    return_linter = return_linter(return_style = "explicit", allow_implicit_else = FALSE),
+    cyclocomp_linter = cyclocomp_linter(complexity_limit = 10L),
+    pipe_consistency_linter = pipe_consistency_linter("auto"),
+    unused_import_linter = unused_import_linter(interpret_glue = TRUE),
+    undesirable_function_linter = undesirable_function_linter(
+        fun = modify_defaults(
+            defaults = default_undesirable_functions,
+            source = NULL,
+            library = NULL,
+            require = NULL)),
+    object_usage_linter = NULL, # This doesn't work well with dplyr
+    condition_call_linter = NULL,
+    condition_message_linter = NULL,
+    consecutive_mutate_linter = NULL,
+    expect_identical_linter = NULL,
+    implicit_integer_linter = NULL,
+    library_call_linter = NULL,
+    literal_coercion_linter = NULL,
+    print_linter = NULL, # This one is the opposite of our style guide
+    sample_int_linter = NULL, # I disagree with this one in terms of clarity
+    strings_as_factors_linter = NULL, # Not relevant given > R 4.0.0
+    unnecessary_placeholder_linter = NULL # I disagree with the style
+    )
+exclusions: list()
