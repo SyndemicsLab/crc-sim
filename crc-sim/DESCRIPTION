@@ -15,5 +15,4 @@ Imports:
     doFuture,
     doRNG,
     future,
-    future.apply,
-    Syndemics
+    future.apply
