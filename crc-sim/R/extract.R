@@ -4,34 +4,85 @@
 # Created Date: 2026-02-17                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-02-23                                                    #
+# Last Modified: 2026-05-05                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
 ################################################################################
 
-#' Function to extract the ground truth from data created through the
-#' \code{create_data} method
+#' Filter Uncaptured Rows
 #'
-#' @param data_table data.table from \code{create_data}
-#' @param capture list: strings of captures
-#' @param group character of strata column to extract on
-#'
-#' @import data.table
-#' @returns list the same length of \code{group}
-#'
+#' @param data_table data.frame: contingency table containing capture columns
+#' @param capture character vector: names of capture columns
+#' @returns tibble containing only uncaptured rows
 #' @keywords internal
+#' @noRd
+filter_uncaptured_rows <- function(data_table, capture) {
+    uncaptured_rows <- tibble::as_tibble(data_table) |>
+        dplyr::mutate(
+            tmp_capture_sum = rowSums(dplyr::across(dplyr::all_of(capture)))
+        ) |>
+        dplyr::filter(.data$tmp_capture_sum == 0) |>
+        dplyr::select(-.data$tmp_capture_sum)
+
+    return(uncaptured_rows)
+}
+
+#' Build Uncaptured Count Values
+#'
+#' @param uncaptured_rows data.frame: rows where all capture columns are 0
+#' @returns list of uncaptured frequency counts
+#' @keywords internal
+#' @noRd
+build_uncaptured_count_values <- function(uncaptured_rows) {
+    return(as.list(uncaptured_rows[["N_ID"]]))
+}
+
+#' Build Uncaptured Count Names
+#'
+#' @param uncaptured_rows data.frame: rows where all capture columns are 0
+#' @param group character: strata column name used for naming output
+#' @param group_missing logical: whether the group argument was omitted
+#' @returns character vector or list used as output names
+#' @keywords internal
+#' @noRd
+build_uncaptured_count_names <- function(
+    uncaptured_rows,
+    group,
+    group_missing
+) {
+    if (group_missing) {
+        return(rep("base", nrow(uncaptured_rows)))
+    }
+
+    return(as.list(uncaptured_rows[[group]]))
+}
+
+#' Extract Uncaptured Ground Truth
+#'
+#' Extracts the uncaptured count from a contingency table where uncaptured
+#' observations are defined as rows with all capture columns equal to 0.
+#'
+#' @param data_table data.frame: contingency table from \code{create_data}
+#' @param group character: strata column used to name output values
+#' @param capture character vector: names of capture columns
+#' @returns named list of uncaptured frequency counts
+#' @export
 extract_ground_truth <- function(
     data_table,
     group,
     capture = c("APCD", "BSAS", "Casemix", "Death", "Matris", "PMP")
 ) {
-    tmp <- NULL
-    data_table <- data_table[, tmp := rowSums(.SD), .SDcols = capture]
-    data_table <- data_table[tmp == 0, ][, tmp := NULL]
+    group_missing <- missing(group)
+    uncaptured_rows <- filter_uncaptured_rows(data_table, capture)
+    out <- build_uncaptured_count_values(uncaptured_rows)
+    out_names <- build_uncaptured_count_names(
+        uncaptured_rows,
+        group,
+        group_missing
+    )
 
-    out <- as.list(data_table[["N_ID"]])
-    names(out) <- ifelse(missing(group), "base", as.list(data_table[[group]]))
+    names(out) <- out_names
 
     return(out)
 }

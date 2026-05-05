@@ -4,7 +4,7 @@
 # Created Date: 2026-02-17                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-02-23                                                    #
+# Last Modified: 2026-05-05                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -16,21 +16,51 @@
 #' @param p_captures list: list of capture probabilities to emulate
 #' @param p_strata list: list of extra 'stratification' probabilities to emulate
 #'
-#' @import data.table
 #' @returns a data.table
 #'
 #' @export
 create_data <- function(n_individuals, p_captures, p_strata) {
-    data_table <- lapply(1:n_individuals, function(x) {
-        return(
-            data.table(
-                t(create_capture(length(p_captures), p_captures)),
-                strata = create_strata(length(p_strata), p_strata)
-            )
-        )
-    }) |>
-        data.table::rbindlist()
-    return(data_table[, list(N_ID = .N), by = c(names(data_table))])
+    records <- build_individual_records(n_individuals, p_captures, p_strata)
+    aggregated <- aggregate_contingency_table(records)
+
+    return(data.table::as.data.table(aggregated))
+}
+
+#' Build Individual Simulation Records
+#'
+#' @keywords internal
+#' @noRd
+build_individual_records <- function(n_individuals, p_captures, p_strata) {
+    records <- purrr::map_dfr(
+        seq_len(n_individuals),
+        create_individual_record,
+        p_captures = p_captures,
+        p_strata = p_strata
+    )
+
+    return(records)
+}
+
+#' Create One Individual Simulation Record
+#'
+#' @keywords internal
+#' @noRd
+create_individual_record <- function(index, p_captures, p_strata) {
+    capture_values <- create_capture(length(p_captures), p_captures)
+    strata_value <- create_strata(length(p_strata), p_strata)
+
+    return(tibble::as_tibble_row(c(capture_values, strata = strata_value)))
+}
+
+#' Aggregate Records into a Contingency Table
+#'
+#' @keywords internal
+#' @noRd
+aggregate_contingency_table <- function(records) {
+    output <- records |>
+        dplyr::count(dplyr::across(dplyr::everything()), name = "N_ID")
+
+    return(output)
 }
 
 #' A function to sample from 1:n along probability \code{prob}
@@ -39,6 +69,7 @@ create_data <- function(n_individuals, p_captures, p_strata) {
 #' @param prob list: probabilities of n - expects summation to 1
 #'
 #' @keywords internal
+#' @noRd
 create_strata <- function(n, prob) {
     if (length(prob) != n) {
         stop("Probability length differs from n")
@@ -57,15 +88,13 @@ create_strata <- function(n, prob) {
 #'
 #' @importFrom stats rbinom
 #' @keywords internal
+#' @noRd
 create_capture <- function(n, prob) {
     if (length(prob) != n) {
         stop("Probability length differs from n")
     }
 
-    out <- vector(length = n)
-    for (i in seq_along(1:n)) {
-        out[i] <- rbinom(1, 1, prob[[i]])
-    }
+    out <- stats::rbinom(n = n, size = 1, prob = unlist(prob))
     names(out) <- paste0("capture_", 1:n)
 
     return(out)

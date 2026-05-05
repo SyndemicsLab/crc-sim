@@ -3,3 +3,8 @@
 app.R
 ^LICENSE\.md$
 ^CRCsim\.png$
+^notebooks$
+^notebooks/.*
+^\.lintr$
+^CITATION\.cff$
+^air\.toml$

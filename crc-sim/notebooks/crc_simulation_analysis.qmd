@@ -1,0 +1,151 @@
+---
+title: "CRC Simulation Analysis (Generated Data)"
+format:
+  html:
+    toc: true
+execute:
+  warning: false
+  message: false
+---
+
+## Overview
+
+This notebook runs the full generated-data CRC workflow:
+
+1. Create synthetic contingency-table data.
+2. Extract uncaptured ground truth (all capture columns are 0).
+3. Apply manipulations (suppression).
+4. Run one or many CRC models with one or many configurations.
+5. Compare model intercept estimates to ground truth.
+
+## Setup
+
+```{r}
+library(crcsim)
+library(dplyr)
+```
+
+## Parameters
+
+```{r}
+seed <- 2024
+n_individuals <- 300000
+p_captures <- c(0.45, 0.35, 0.25, 0.20)
+p_strata <- c(0.60, 0.40)
+
+methods <- c("poisson", "negbin")
+config <- list(
+    f0_05 = list(direction = "forward", threshold = 0.05),
+    b0_05 = list(direction = "backward", threshold = 0.05),
+    fb0_05 = list(direction = "both", threshold = 0.05)
+)
+
+suppress <- 10
+```
+
+## Single-Run Analysis
+
+```{r}
+single_run <- run_crc(
+    mode = "single",
+    p_captures = p_captures,
+    p_strata = p_strata,
+    n_individuals = n_individuals,
+    methods = methods,
+    config = config,
+    suppress = suppress,
+    formula_selection = "stepwise",
+    seed = seed
+)
+
+single_run
+```
+
+## Bootstrap Analysis
+
+```{r}
+n_bootstraps <- 5
+
+bootstrap_run <- run_crc(
+    mode = "bootstrap",
+    n_bootstraps = n_bootstraps,
+    p_captures = p_captures,
+    p_strata = p_strata,
+    n_individuals = n_individuals,
+    methods = methods,
+    config = config,
+    suppress = suppress,
+    formula_selection = "stepwise",
+    seed = seed
+)
+
+bootstrap_run
+```
+
+## Summary
+
+```{r}
+bootstrap_summary <- bootstrap_run |>
+    group_by(Method, Model, group) |>
+    summarize(
+        mean_estimate = mean(estimate, na.rm = TRUE),
+        mean_ground = mean(ground, na.rm = TRUE),
+        mean_bias = mean(estimate - ground, na.rm = TRUE),
+        mean_time_to_convergence_sec = mean(
+            time_to_convergence_sec,
+            na.rm = TRUE
+        ),
+        median_time_to_convergence_sec = median(
+            time_to_convergence_sec,
+            na.rm = TRUE
+        ),
+        .groups = "drop"
+    )
+
+bootstrap_summary
+```
+
+## Convergence Timing Benchmark
+
+```{r}
+convergence_benchmark <- bootstrap_run |>
+    group_by(Method, Model) |>
+    summarize(
+        n_runs = dplyr::n_distinct(Run),
+        mean_time_to_convergence_sec = mean(
+            time_to_convergence_sec,
+            na.rm = TRUE
+        ),
+        p95_time_to_convergence_sec = stats::quantile(
+            time_to_convergence_sec,
+            probs = 0.95,
+            na.rm = TRUE
+        ),
+        .groups = "drop"
+    ) |>
+    arrange(mean_time_to_convergence_sec)
+
+convergence_benchmark
+```
+
+## Convergence Time Boxplot
+
+```{r}
+library(ggplot2)
+
+bootstrap_run |>
+    ggplot(aes(x = Model, y = time_to_convergence_sec, fill = Method)) +
+    geom_boxplot(alpha = 0.7) +
+    facet_wrap(~Method, scales = "free_x") +
+    labs(
+        title = "Distribution of Convergence Times by Method and Model",
+        x = "Model Configuration",
+        y = "Time to Convergence (seconds)",
+        fill = "Method"
+    ) +
+    theme_minimal() +
+    theme(
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust = 0.5, face = "bold")
+    )
+```

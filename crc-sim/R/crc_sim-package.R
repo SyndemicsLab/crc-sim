@@ -7,6 +7,6 @@
 #' @importFrom future multisession
 #' @importFrom future plan
 #' @importFrom future.apply future_lapply
-#' @importFrom Syndemics crc
+#' @importFrom rlang .data
 ## usethis namespace: end
 NULL

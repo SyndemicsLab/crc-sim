@@ -2,16 +2,20 @@
 % Please edit documentation in R/compare.R
 \name{compare}
 \alias{compare}
-\title{Function to compare between simulation results and ground truth}
+\title{Compare Simulation Results Against Ground Truth}
 \usage{
-compare(sim, groundTruth)
+compare(sim, ground_truth)
 }
 \arguments{
-\item{sim}{list of simulations done by \code{simulate}}
+\item{sim}{list: simulations produced by \code{simulate}}
 
-\item{groundTruth}{list of ground truths by \code{extract.groundTruth}}
+\item{ground_truth}{list: ground truth values produced by
+\code{extract_ground_truth}}
+}
+\value{
+tibble with AIC, estimate, confidence intervals, and ground truth
+for each group
 }
 \description{
-Function to compare between simulation results and ground truth
+Compare Simulation Results Against Ground Truth
 }
-\keyword{internal}

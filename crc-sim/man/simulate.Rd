@@ -2,34 +2,38 @@
 % Please edit documentation in R/simulate.R
 \name{simulate}
 \alias{simulate}
-\title{Attempts recovery of the ground truth - fundamentally a wrapper for Syndemics::crc}
+\title{Attempts recovery of the ground truth - fundamentally a wrapper for crc}
 \usage{
 simulate(
-  DT,
-  capture = c("APCD", "BSAS", "Casemix", "Death", "Matris", "PMP"),
+  data_table,
   group,
   suppress,
   method,
-  formula.selection,
-  opts.stepwise
+  formula_selection,
+  opts_stepwise,
+  capture = c("APCD", "BSAS", "Casemix", "Death", "Matris", "PMP")
 )
 }
 \arguments{
-\item{DT}{data.table from the \code{create.data} step}
-
-\item{capture}{list: strings of captures}
+\item{data_table}{data.table from the \code{create.data} step}
 
 \item{group}{stratification string to group by}
 
 \item{suppress}{numeric: maximum value to suppress at}
 
-\item{method}{string: selection for spatial capture recapture model - either "poisson" or "negbin"}
+\item{method}{string: selection for spatial capture recapture model - either
+"poisson" or "negbin"}
 
-\item{formula.selection}{string: selection for formula decision - either "aic", "corr", or "stepwise"}
+\item{formula_selection}{string: selection for formula decision - either
+"aic", "corr", or "stepwise"}
 
-\item{opts.stepwise}{list: list containing 'direction' of 'forward' 'backward' or 'both', and 'threshold': p value threshold for stepwise selection}
+\item{opts_stepwise}{list: list containing 'direction' of 'forward'
+'backward' or 'both', and 'threshold': p value threshold for stepwise
+selection}
+
+\item{capture}{list: strings of captures}
 }
 \description{
-Attempts recovery of the ground truth - fundamentally a wrapper for Syndemics::crc
+Attempts recovery of the ground truth - fundamentally a wrapper for crc
 }
 \keyword{internal}

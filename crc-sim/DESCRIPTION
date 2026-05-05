@@ -1,18 +1,26 @@
-Package: crc-sim
+Package: crcsim
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Simulating Data Capture Recapture
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Author: Matthew Carroll and Ryan O'Dea
+Maintainer: The package maintainer <matthew.carroll@bmc.org>
+Description: Simulating Data Capture Recapture (crcsim) focuses on simulating data for capture-recapture (crc) analyses. The package includes functions to generate crc data, extract the unknown values from the generated data, fit multiple different log-linear model configurations to the data, and compare the estimated intercept value to the ground truth. The package is designed to be flexible and can be used for a variety of applications, including epidemiology, ecology, and social sciences.
+    The package can be used with either generated or user provided data. The generated data can be customized to include different numbers of captures, different capture probabilities, and different levels of heterogeneity. The user-provided data can be in the form of a contingency table or a data frame with binary indicators for each capture.
 License: AGPL (>= 3) + file LICENSE
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.3
 Imports: 
     data.table,
+    dplyr,
     doFuture,
     doRNG,
     future,
-    future.apply
+    future.apply,
+    MASS,
+    purrr,
+    rlang,
+    tibble
+Suggests:
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
