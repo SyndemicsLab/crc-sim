@@ -11,7 +11,10 @@ crc(
   method = "poisson",
   formula_selection = "stepwise",
   formula = NULL,
-  opts_stepwise = list(direction = "both", threshold = 0.05, verbose = TRUE)
+  opts_stepwise = list(direction = "both", threshold = 0.05, verbose = TRUE),
+  opts_tmle = list(list_pair = NULL, funcname = "logit", nfolds = 2, margin = 0.005,
+    estimator = "TMLE", expansion_mode = "exact", sample_size = 1e+05, warn_expanded_rows
+    = 1e+06)
 )
 }
 \arguments{
@@ -28,13 +31,19 @@ variables indicating involvement in the given database}
 either 'poisson' or 'negbin'}
 
 \item{formula_selection}{String: Selection for formula decision - either
-'aic' or 'stepwise'}
+'aic', 'stepwise', or 'tmle'}
 
 \item{formula}{Formula: Optional custom formula object for regression}
 
 \item{opts_stepwise}{List: List of \code{direction}: 'forward', 'backward',
 or 'both', \code{threshold}: p-value threshold for stepwise selection, and
 \code{verbose} if you would like every stepped-through model to be printed}
+
+\item{opts_tmle}{List: TMLE options where \code{list_pair} is required and
+should specify two capture columns (e.g., \code{c("capture_1","capture_2")}).
+Optional fields include \code{funcname}, \code{nfolds}, \code{margin},
+\code{estimator}, \code{expansion_mode}, \code{sample_size}, and
+\code{warn_expanded_rows}}
 }
 \description{
 A method for estimation of 'unknowns' through knowledge about knowns as
@@ -44,5 +53,5 @@ doi:10.2105/AJPH.2018.304673
 }
 \details{
 This implementation supports poisson and negative binomial regression models
-with either AIC-based formula selection or stepwise selection.
+with either AIC-based, stepwise, or TMLE formula selection.
 }

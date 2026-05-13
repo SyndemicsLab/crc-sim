@@ -49,7 +49,8 @@ run_crc_analysis_scenario <- function(
     method,
     suppress,
     formula_selection,
-    opts_stepwise
+    opts_stepwise,
+    opts_tmle
 ) {
     captures <- names(data_table)[
         !names(data_table) %in% c("N_ID", "strata", "tmp")
@@ -68,6 +69,7 @@ run_crc_analysis_scenario <- function(
         method,
         formula_selection,
         opts_stepwise,
+        opts_tmle,
         capture = captures
     )
 
@@ -83,7 +85,8 @@ run_single_method_config <- function(
     data_table,
     method,
     suppress,
-    formula_selection
+    formula_selection,
+    opts_tmle
 ) {
     start_time <- proc.time()[["elapsed"]]
 
@@ -92,7 +95,8 @@ run_single_method_config <- function(
         method = method,
         suppress = suppress,
         formula_selection = formula_selection,
-        opts_stepwise = c(config_value, verbose = FALSE)
+        opts_stepwise = c(config_value, verbose = FALSE),
+        opts_tmle = opts_tmle
     )
 
     elapsed_seconds <- proc.time()[["elapsed"]] - start_time
@@ -112,15 +116,32 @@ run_method_across_configs <- function(
     method,
     config,
     suppress,
-    formula_selection
+    formula_selection,
+    opts_tmle
 ) {
+    if (formula_selection == "tmle") {
+        analyzed <- run_single_method_config(
+            config_value = list(direction = "both", threshold = 0.05),
+            data_table = data_table,
+            method = method,
+            suppress = suppress,
+            formula_selection = formula_selection,
+            opts_tmle = opts_tmle
+        ) |>
+            dplyr::mutate(Model = "TMLE") |>
+            dplyr::mutate(Method = resolve_method_label(method))
+
+        return(analyzed)
+    }
+
     analyzed <- purrr::map(
         config,
         run_single_method_config,
         data_table = data_table,
         method = method,
         suppress = suppress,
-        formula_selection = formula_selection
+        formula_selection = formula_selection,
+        opts_tmle = opts_tmle
     ) |>
         format_bootstrap_analysis_output() |>
         dplyr::mutate(Method = resolve_method_label(method))
@@ -137,7 +158,8 @@ run_methods_for_one_dataset <- function(
     methods,
     config,
     suppress,
-    formula_selection
+    formula_selection,
+    opts_tmle
 ) {
     method_outputs <- purrr::map(
         methods,
@@ -145,7 +167,8 @@ run_methods_for_one_dataset <- function(
         data_table = data_table,
         config = config,
         suppress = suppress,
-        formula_selection = formula_selection
+        formula_selection = formula_selection,
+        opts_tmle = opts_tmle
     )
 
     return(dplyr::bind_rows(method_outputs))
@@ -163,6 +186,7 @@ run_crc_single_simulation <- function(
     config,
     suppress,
     formula_selection,
+    opts_tmle,
     seed
 ) {
     set.seed(seed)
@@ -173,7 +197,8 @@ run_crc_single_simulation <- function(
         methods = methods,
         config = config,
         suppress = suppress,
-        formula_selection = formula_selection
+        formula_selection = formula_selection,
+        opts_tmle = opts_tmle
     ))
 }
 
@@ -190,7 +215,8 @@ run_crc_bootstrap_iteration <- function(
     methods,
     config,
     suppress,
-    formula_selection
+    formula_selection,
+    opts_tmle
 ) {
     invisible(bootstrap_index)
     gc() # garbage collection to free up memory between bootstraps
@@ -201,7 +227,8 @@ run_crc_bootstrap_iteration <- function(
         methods = methods,
         config = config,
         suppress = suppress,
-        formula_selection = formula_selection
+        formula_selection = formula_selection,
+        opts_tmle = opts_tmle
     ))
 }
 
@@ -230,6 +257,7 @@ run_crc_bootstrap_parallel <- function(
     config,
     suppress,
     formula_selection,
+    opts_tmle,
     seed
 ) {
     set.seed(seed)
@@ -244,6 +272,7 @@ run_crc_bootstrap_parallel <- function(
         config = config,
         suppress = suppress,
         formula_selection = formula_selection,
+        opts_tmle = opts_tmle,
         future.seed = TRUE
     )
 
@@ -264,6 +293,8 @@ run_crc_bootstrap_parallel <- function(
 #' @param config list: stepwise-selection configurations
 #' @param suppress int: suppression cap used during simulation
 #' @param formula_selection string: formula selection approach
+#' @param opts_tmle list: TMLE options where \code{list_pair} is required when
+#' formula_selection is \code{"tmle"}
 #' @param seed int: starting seed
 #'
 #' @importFrom future.apply future_lapply
@@ -278,6 +309,16 @@ run_crc <- function(
     config = default_crc_config(),
     suppress = 10,
     formula_selection = "stepwise",
+    opts_tmle = list(
+        list_pair = NULL,
+        funcname = "logit",
+        nfolds = 2,
+        margin = 0.005,
+        estimator = "TMLE",
+        expansion_mode = "exact",
+        sample_size = 100000,
+        warn_expanded_rows = 1000000
+    ),
     seed = 2024
 ) {
     mode <- match.arg(mode)
@@ -292,6 +333,7 @@ run_crc <- function(
             config = config,
             suppress = suppress,
             formula_selection = formula_selection,
+            opts_tmle = opts_tmle,
             seed = seed
         ))
     }
@@ -305,6 +347,7 @@ run_crc <- function(
         config = config,
         suppress = suppress,
         formula_selection = formula_selection,
+        opts_tmle = opts_tmle,
         seed = seed
     ))
 }

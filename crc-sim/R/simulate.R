@@ -54,7 +54,8 @@ run_simulation_model <- function(
     capture,
     method,
     formula_selection,
-    opts_stepwise
+    opts_stepwise,
+    opts_tmle
 ) {
     return(crc(
         data = data_table,
@@ -62,7 +63,8 @@ run_simulation_model <- function(
         binary_variables = capture,
         method = method,
         formula_selection = formula_selection,
-        opts_stepwise = opts_stepwise
+        opts_stepwise = opts_stepwise,
+        opts_tmle = opts_tmle
     ))
 }
 
@@ -95,10 +97,11 @@ split_simulation_groups <- function(data_table, group) {
 #' @param method string: selection for spatial capture recapture model - either
 #' "poisson" or "negbin"
 #' @param formula_selection string: selection for formula decision - either
-#' "aic", "corr", or "stepwise"
+#' "aic", "corr", "stepwise", or "tmle"
 #' @param opts_stepwise list: list containing 'direction' of 'forward'
 #' 'backward' or 'both', and 'threshold': p value threshold for stepwise
 #' selection
+#' @param opts_tmle list: TMLE options passed into \code{crc}
 #'
 #' @keywords internal
 
@@ -109,6 +112,7 @@ simulate <- function(
     method,
     formula_selection,
     opts_stepwise,
+    opts_tmle,
     capture = c("APCD", "BSAS", "Casemix", "Death", "Matris", "PMP")
 ) {
     data_table <- filter_observed_rows(data_table, capture)
@@ -122,7 +126,8 @@ simulate <- function(
             capture = capture,
             method = method,
             formula_selection = formula_selection,
-            opts_stepwise = opts_stepwise
+            opts_stepwise = opts_stepwise,
+            opts_tmle = opts_tmle
         )
 
         return(out_list)
@@ -133,7 +138,8 @@ simulate <- function(
         capture = capture,
         method = method,
         formula_selection = formula_selection,
-        opts_stepwise = opts_stepwise
+        opts_stepwise = opts_stepwise,
+        opts_tmle = opts_tmle
     )
 
     return(out)

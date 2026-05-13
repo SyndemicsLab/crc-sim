@@ -9,9 +9,8 @@ Description: Simulating Data Capture Recapture (crcsim) focuses on simulating da
 License: AGPL (>= 3) + file LICENSE
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.3.3
 Imports: 
-    data.table,
+    drpop,
     dplyr,
     doFuture,
     doRNG,
@@ -24,3 +23,4 @@ Imports:
 Suggests:
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
+Config/roxygen2/version: 8.0.0

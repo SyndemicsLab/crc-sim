@@ -11,6 +11,7 @@ simulate(
   method,
   formula_selection,
   opts_stepwise,
+  opts_tmle,
   capture = c("APCD", "BSAS", "Casemix", "Death", "Matris", "PMP")
 )
 }
@@ -25,11 +26,13 @@ simulate(
 "poisson" or "negbin"}
 
 \item{formula_selection}{string: selection for formula decision - either
-"aic", "corr", or "stepwise"}
+"aic", "corr", "stepwise", or "tmle"}
 
 \item{opts_stepwise}{list: list containing 'direction' of 'forward'
 'backward' or 'both', and 'threshold': p value threshold for stepwise
 selection}
+
+\item{opts_tmle}{list: TMLE options passed into \code{crc}}
 
 \item{capture}{list: strings of captures}
 }

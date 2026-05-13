@@ -14,6 +14,9 @@ run_crc(
   config = default_crc_config(),
   suppress = 10,
   formula_selection = "stepwise",
+  opts_tmle = list(list_pair = NULL, funcname = "logit", nfolds = 2, margin = 0.005,
+    estimator = "TMLE", expansion_mode = "exact", sample_size = 1e+05, warn_expanded_rows
+    = 1e+06),
   seed = 2024
 )
 }
@@ -35,6 +38,9 @@ run_crc(
 \item{suppress}{int: suppression cap used during simulation}
 
 \item{formula_selection}{string: formula selection approach}
+
+\item{opts_tmle}{list: TMLE options where \code{list_pair} is required when
+formula_selection is \code{"tmle"}}
 
 \item{seed}{int: starting seed}
 }

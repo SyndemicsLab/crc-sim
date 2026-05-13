@@ -4,7 +4,7 @@
 # Created Date: 2026-05-05                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-05                                                    #
+# Last Modified: 2026-05-13                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -233,5 +233,131 @@ test_that("run_crc output includes convergence timing benchmark column", {
     expect_true("time_to_convergence_sec" %in% names(single_result))
     expect_true("time_to_convergence_sec" %in% names(bootstrap_result))
     expect_true(all(single_result$time_to_convergence_sec >= 0, na.rm = TRUE))
-    expect_true(all(bootstrap_result$time_to_convergence_sec >= 0, na.rm = TRUE))
+    expect_true(all(
+        bootstrap_result$time_to_convergence_sec >= 0,
+        na.rm = TRUE
+    ))
+})
+
+test_that("tmle requires opts_tmle list_pair", {
+    skip_if_not_installed("drpop")
+
+    set.seed(2026)
+    data_table <- create_data(
+        n_individuals = 2000,
+        p_captures = c(0.4, 0.3, 0.2),
+        p_strata = 1
+    )
+
+    capture_columns <- c("capture_1", "capture_2", "capture_3")
+    observed_table <- data_table |>
+        dplyr::filter(
+            rowSums(dplyr::across(
+                dplyr::all_of(capture_columns)
+            )) !=
+                0
+        )
+
+    expect_error(
+        crc(
+            data = observed_table,
+            freq_column = "N_ID",
+            binary_variables = capture_columns,
+            method = "poisson",
+            formula_selection = "tmle",
+            opts_tmle = list(
+                funcname = "logit",
+                nfolds = 2,
+                margin = 0.005,
+                estimator = "TMLE",
+                expansion_mode = "exact",
+                sample_size = 5000,
+                warn_expanded_rows = 1000000
+            )
+        )
+    )
+})
+
+test_that("tmle returns hidden estimate from contingency table input", {
+    skip_if_not_installed("drpop")
+
+    set.seed(2026)
+    data_table <- create_data(
+        n_individuals = 4000,
+        p_captures = c(0.45, 0.3, 0.25),
+        p_strata = 1
+    )
+
+    capture_columns <- c("capture_1", "capture_2", "capture_3")
+    observed_table <- data_table |>
+        dplyr::filter(
+            rowSums(dplyr::across(
+                dplyr::all_of(capture_columns)
+            )) !=
+                0
+        )
+
+    tmle_result <- crc(
+        data = observed_table,
+        freq_column = "N_ID",
+        binary_variables = capture_columns,
+        method = "poisson",
+        formula_selection = "tmle",
+        opts_tmle = list(
+            list_pair = c("capture_1", "capture_2"),
+            funcname = "logit",
+            nfolds = 2,
+            margin = 0.005,
+            estimator = "TMLE",
+            expansion_mode = "exact",
+            sample_size = 5000,
+            warn_expanded_rows = 1000000
+        )
+    )
+
+    expect_type(tmle_result$estimate, "double")
+    expect_true(is.na(tmle_result$AIC))
+    expect_gte(tmle_result$estimate, 0)
+    expect_false(is.null(tmle_result$list_pair))
+})
+
+test_that("tmle warns when exact expansion is large", {
+    skip_if_not_installed("drpop")
+
+    set.seed(2026)
+    data_table <- create_data(
+        n_individuals = 2500,
+        p_captures = c(0.45, 0.3, 0.25),
+        p_strata = 1
+    )
+
+    capture_columns <- c("capture_1", "capture_2", "capture_3")
+    observed_table <- data_table |>
+        dplyr::filter(
+            rowSums(dplyr::across(
+                dplyr::all_of(capture_columns)
+            )) !=
+                0
+        )
+
+    expect_warning(
+        crc(
+            data = observed_table,
+            freq_column = "N_ID",
+            binary_variables = capture_columns,
+            method = "poisson",
+            formula_selection = "tmle",
+            opts_tmle = list(
+                list_pair = c("capture_1", "capture_2"),
+                funcname = "logit",
+                nfolds = 2,
+                margin = 0.005,
+                estimator = "TMLE",
+                expansion_mode = "exact",
+                sample_size = 5000,
+                warn_expanded_rows = 100
+            )
+        ),
+        "memory intensive"
+    )
 })

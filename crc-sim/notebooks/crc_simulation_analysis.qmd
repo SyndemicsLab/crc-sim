@@ -29,7 +29,8 @@ library(dplyr)
 
 ```{r}
 seed <- 2024
-n_individuals <- 300000
+# n_individuals <- 300000
+n_individuals <- 500
 p_captures <- c(0.45, 0.35, 0.25, 0.20)
 p_strata <- c(0.60, 0.40)
 
@@ -59,6 +60,36 @@ single_run <- run_crc(
 )
 
 single_run
+```
+
+## Single-Run TMLE Analysis
+
+This is not working, I'll need to dig in here next.
+
+```{r}
+single_tmle_run <- run_crc(
+    mode = "single",
+    p_captures = p_captures,
+    p_strata = p_strata,
+    n_individuals = n_individuals,
+    methods = methods,
+    config = config,
+    suppress = suppress,
+    formula_selection = "tmle",
+    opts_tmle = list(
+        list_pair = c("capture_1", "capture_2"),
+        funcname = "logit",
+        nfolds = 2,
+        margin = 0.005,
+        estimator = "TMLE",
+        expansion_mode = "exact",
+        sample_size = 100000,
+        warn_expanded_rows = 1000000
+    ),
+    seed = seed
+)
+
+single_tmle_run
 ```
 
 ## Bootstrap Analysis
