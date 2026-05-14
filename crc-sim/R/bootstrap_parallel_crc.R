@@ -4,13 +4,16 @@
 # Created Date: 2026-02-17                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-05                                                    #
+# Last Modified: 2026-05-14                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
 ################################################################################
 
-default_crc_config <- function() {
+#' Return a Default List of Stepwise Selection Configurations
+#' @keywords internal
+#' @noRd
+default_stepwise_config <- function() {
     return(list(
         f0_05 = list(direction = "forward", threshold = 0.05),
         f0_1 = list(direction = "forward", threshold = 0.1),
@@ -19,17 +22,6 @@ default_crc_config <- function() {
         fb0_05 = list(direction = "both", threshold = 0.05),
         fb0_1 = list(direction = "both", threshold = 0.1)
     ))
-}
-
-validate_crc_methods <- function(methods) {
-    valid_methods <- c("poisson", "negbin")
-    invalid_methods <- methods[!(methods %in% valid_methods)]
-
-    if (length(invalid_methods) > 0) {
-        stop("Methods must be one or both of: 'poisson', 'negbin'")
-    }
-
-    return(NULL)
 }
 
 resolve_method_label <- function(method) {
@@ -300,29 +292,20 @@ run_crc_bootstrap_parallel <- function(
 #' @importFrom future.apply future_lapply
 #' @export
 run_crc <- function(
-    mode = c("bootstrap", "single"),
-    n_bootstraps = 100,
-    p_captures,
-    p_strata,
     n_individuals = 3e5,
-    methods = c("poisson", "negbin"),
-    config = default_crc_config(),
+    p_strata = 1,
+    p_captures = c(0.45, 0.3, 0.2),
     suppress = 10,
+    mode = c("single", "bootstrap"),
+    n_bootstraps = 100,
+    methods = c("poisson", "negbin"),
     formula_selection = "stepwise",
-    opts_tmle = list(
-        list_pair = NULL,
-        funcname = "logit",
-        nfolds = 2,
-        margin = 0.005,
-        estimator = "TMLE",
-        expansion_mode = "exact",
-        sample_size = 100000,
-        warn_expanded_rows = 1000000
-    ),
+    opts_stepwise = default_stepwise_config(),
+    opts_tmle = default_tmle_config(),
     seed = 2024
 ) {
     mode <- match.arg(mode)
-    validate_crc_methods(methods)
+    methods <- match.arg(methods, several.ok = TRUE)
 
     if (mode == "single") {
         return(run_crc_single_simulation(
