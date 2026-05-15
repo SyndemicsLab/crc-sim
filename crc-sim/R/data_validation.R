@@ -1,14 +1,36 @@
 ################################################################################
-# File: drpop_validation.R                                                     #
+# File: data_validation.R                                                      #
 # Project: crc-sim                                                             #
 # Created Date: 2026-05-14                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-14                                                    #
+# Last Modified: 2026-05-15                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
 ################################################################################
+
+#' A function used to check if the provided data is a frequency table. This is
+#' necessary as the CRC estimation functions require a frequency table as input.
+#'
+#' @param data a data frame
+#' @param frequency_column a string specifying the name of the frequency column
+#' in the data frame
+#' @returns a boolean indicating whether the data frame is a frequency table
+#' (i.e., contains the specified frequency column and that column is numeric)
+#'
+#' @keywords internal
+#' @export
+is_frequency_table <- function(data, frequency_column) {
+    if (
+        frequency_column %in%
+            names(data) &&
+            is.numeric(data[[frequency_column]])
+    ) {
+        return(TRUE)
+    }
+    return(FALSE)
+}
 
 #' A function used to convert all integer columns to numeric. This is necessary
 #' as the drpop package requires all data columns to be numerics.

@@ -5,37 +5,33 @@
 \title{Run CRC Models}
 \usage{
 run_crc(
-  mode = c("bootstrap", "single"),
-  n_bootstraps = 100,
-  p_captures,
-  p_strata,
   n_individuals = 3e+05,
-  methods = c("poisson", "negbin"),
-  config = default_crc_config(),
+  p_strata = 1,
+  p_captures = c(0.45, 0.3, 0.2),
   suppress = 10,
+  mode = c("single", "bootstrap"),
+  n_bootstraps = 100,
+  methods = c("poisson", "negbin"),
   formula_selection = "stepwise",
-  opts_tmle = list(list_pair = NULL, funcname = "logit", nfolds = 2, margin = 0.005,
-    estimator = "TMLE", expansion_mode = "exact", sample_size = 1e+05, warn_expanded_rows
-    = 1e+06),
+  opts_stepwise = default_stepwise_config(),
+  opts_tmle = default_tmle_config(),
   seed = 2024
 )
 }
 \arguments{
+\item{n_individuals}{int: number of individuals sampled per run}
+
+\item{p_strata}{list: list of strata probabilities - for nonstratified use 1}
+
+\item{p_captures}{list: list of capture probabilities}
+
+\item{suppress}{int: suppression cap used during simulation}
+
 \item{mode}{string: either "single" or "bootstrap"}
 
 \item{n_bootstraps}{int: number of bootstrap runs when mode is "bootstrap"}
 
-\item{p_captures}{list: list of capture probabilities}
-
-\item{p_strata}{list: list of strata probabilities - for nonstratified use 1}
-
-\item{n_individuals}{int: number of individuals sampled per run}
-
 \item{methods}{character vector: one or both of "poisson" and "negbin"}
-
-\item{config}{list: stepwise-selection configurations}
-
-\item{suppress}{int: suppression cap used during simulation}
 
 \item{formula_selection}{string: formula selection approach}
 
@@ -43,6 +39,8 @@ run_crc(
 formula_selection is \code{"tmle"}}
 
 \item{seed}{int: starting seed}
+
+\item{config}{list: stepwise-selection configurations}
 }
 \description{
 Wrapper entrypoint for package consumers. Supports either one simulation run

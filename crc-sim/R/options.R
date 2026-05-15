@@ -31,9 +31,21 @@
 Options <- R6::R6Class( # nolint: object_name_linter
     "Options",
     public = list(
+        #' @field model Character scalar identifying either the log-linear
+        #' model or the nuisance function to utilize.
         model = NULL,
+        #' @field threshold Numeric scalar giving the threshold applied by
+        #' threshold-based selection methods or the margin desired by stepwise
+        #' selection.
         threshold = NULL,
 
+        #' @description Create a new \\code{Options} instance.
+        #' @param model Character scalar identifying either the log-linear
+        #' model or the nuisance function to utilize.
+        #' @param threshold Numeric scalar giving the threshold applied by
+        #' threshold-based selection methods or the margin desired by stepwise
+        #' selection.
+        #' @return The initialized \\code{Options} object.
         initialize = function(model, threshold) {
             self$model <- model
             self$threshold <- threshold
@@ -47,33 +59,63 @@ Options <- R6::R6Class( # nolint: object_name_linter
 #' selection methods in CRC. It inherits from the base Options class and
 #' includes additional parameters specific to the frequency-based methods
 #'
-#' @param formula A formula object specifying the log-linear model to fit. If
-#' NULL, the formula will be determined based on the specified formula
-#' selection method.
-#' @param frequency_column The name of the column in the data that contains the
-#' frequency counts for each capture history.
-#' @param capture_indicators A vector of the names of the columns in the data
-#' that indicate the capture history (i.e., which lists captured each
-#' individual).
+#' @param formulas Optional formula object or list of formulas to initialize
+#' the object with.
 #' @export
 # fmt:skip
 FrequencyOptions <- R6::R6Class( # nolint: object_name_linter
     "FrequencyOptions",
     inherit = Options,
     public = list(
+        #' @field formulas Formula object or collection of formulas used when
+        #' fitting frequency-based CRC models.
         formulas = NULL,
-        frequency_column = NULL,
-        capture_indicators = NULL,
+        #' @field frequency_col_name Character scalar naming the frequency
+        #' column.
+        frequency_col_name = NULL,
 
+        #' @description Create a new \\code{FrequencyOptions} instance.
+        #' @param model Character scalar identifying the model family.
+        #' @param threshold Numeric scalar giving the threshold applied by
+        #' threshold-based selection methods.
+        #' @param formulas Optional formula object or list of formulas used to
+        #' initialize the object.
+        #' @param frequency_col_name Character scalar naming the frequency
+        #' column in the aggregated CRC data.
+        #' @return The initialized \\code{FrequencyOptions} object.
         initialize = function(
             model,
             threshold,
-            frequency_column = NULL,
-            capture_indicators = NULL
+            formulas,
+            frequency_col_name
         ) {
             super$initialize(model, threshold)
-            self$frequency_column <- frequency_column
-            self$capture_indicators <- capture_indicators
+            self$formulas <- formulas
+            self$frequency_col_name <- frequency_col_name
+            return(self)
+        },
+
+        #' @description Append a single formula to \\code{self$formulas}.
+        #' @param formula A formula object to append.
+        #' @return The updated \\code{FrequencyOptions} object.
+        add_formula = function(formula) {
+            if (is.null(self$formulas)) {
+                self$formulas <- formula
+            } else {
+                self$formulas <- c(self$formulas, formula)
+            }
+            return(self)
+        },
+
+        #' @description Append multiple formulas to \\code{self$formulas}.
+        #' @param formula_list A list of formula objects to append.
+        #' @return The updated \\code{FrequencyOptions} object.
+        add_formulas = function(formula_list) {
+            if (is.null(self$formulas)) {
+                self$formulas <- formula_list
+            } else {
+                self$formulas <- c(self$formulas, formula_list)
+            }
             return(self)
         }
     )
@@ -91,35 +133,53 @@ FrequencyOptions <- R6::R6Class( # nolint: object_name_linter
 #' @param capture_indicators A vector of the names of the columns in the data
 #' that indicate the capture history (i.e., which lists captured each
 #' individual).
+#' @param interaction_limit Integer scalar giving the maximum order of
+#' interactions to include in the stepwise search.
 #' @export
 #fmt: skip
 StepwiseOptions <- R6::R6Class( # nolint: object_name_linter
     "StepwiseOptions",
     inherit = FrequencyOptions,
     public = list(
+        #' @field direction Character scalar specifying the stepwise search
+        #' direction.
         direction = NULL,
-        threshold = NULL,
-        frequency_column = NULL,
+        #' @field capture_indicators Character vector naming the capture history
+        #' indicator columns.
         capture_indicators = NULL,
+        #' @field interaction_limit Integer scalar giving the maximum order of
+        #' interactions to include in the search.
         interaction_limit = 2,
 
+        #' @description Create a new \\code{StepwiseOptions} instance.
+        #' @param model Character scalar identifying the model family.
+        #' @param threshold Numeric scalar giving the stepwise inclusion
+        #' threshold.
+        #' @param direction Character scalar specifying the stepwise search
+        #' direction.
+        #' @param frequency_column Character scalar naming the frequency column
+        #' in the aggregated CRC data.
+        #' @param capture_indicators Character vector naming the capture history
+        #' indicator columns.
+        #' @param interaction_limit Integer scalar giving the maximum order of
+        #' interactions to include in the search.
+        #' @return The initialized \\code{StepwiseOptions} object.
         initialize = function(
             model,
             threshold,
             direction,
-            formula = NULL,
-            frequency_column = NULL,
+            frequency_col_name = "N_ID",
             capture_indicators = NULL,
             interaction_limit = 2
         ) {
             super$initialize(
                 model,
                 threshold,
-                formula,
-                frequency_column,
-                capture_indicators
+                formulas = NULL,
+                frequency_col_name = frequency_col_name
             )
             self$direction <- direction
+            self$capture_indicators <- capture_indicators
             self$interaction_limit <- interaction_limit
             return(self)
         }
@@ -143,24 +203,34 @@ StepwiseOptions <- R6::R6Class( # nolint: object_name_linter
 # fmt: skip
 AICOptions <- R6::R6Class( # nolint: object_name_linter
     "AICOptions",
-    inherit = Options,
+    inherit = FrequencyOptions,
     public = list(
+        #' @field formulas Formula object or collection of formulas evaluated by
+        #' the AIC-based selection routine.
         formulas = NULL,
+        #' @description Create a new \\code{AICOptions} instance.
+        #' @param model Character scalar identifying the model family.
+        #' @param formula Optional formula object to evaluate directly.
+        #' @param frequency_col_name Character scalar naming the frequency
+        #' column
+        #' in the aggregated CRC data.
+        #' @param capture_indicators Character vector naming the capture history
+        #' indicator columns.
+        #' @return The initialized \\code{AICOptions} object.
         initialize = function(
             model,
-            frequency_column = NULL,
-            capture_indicators = NULL,
-            formula = NULL
+            formula = NULL,
+            frequency_col_name = "N_ID",
+            capture_indicators = NULL
         ) {
             super$initialize(
                 model,
                 threshold = NULL,
-                frequency_column,
-                capture_indicators,
-                formula
+                formulas = NULL,
+                frequency_col_name = frequency_col_name
             )
-            formulas <- private$validate_formula_input(
-                frequency_column,
+            self$formulas <- private$validate_formula_input(
+                frequency_col_name,
                 capture_indicators,
                 formula
             )
@@ -168,6 +238,17 @@ AICOptions <- R6::R6Class( # nolint: object_name_linter
         }
     ),
     private = list(
+        # Note: These are not Roxygen2 comments because it errors on private
+        # members of classes being commented
+        # @description Validate or generate the formula input used by
+        # \\code{AICOptions}.
+        # @param freq_column Character scalar naming the frequency column in
+        # the aggregated CRC data.
+        # @param binary_variables Character vector naming the binary capture
+        # indicator columns.
+        # @param formula Optional formula object supplied by the caller.
+        # @return A formula object or collection of formulas for AIC model
+        # evaluation.
         validate_formula_input = function(
             freq_column,
             binary_variables,
@@ -206,10 +287,27 @@ PlugInOptions <- R6::R6Class( # nolint: object_name_linter
     "PlugInOptions",
     inherit = Options,
     public = list(
+        #' @field list_pair Character vector of length two naming the capture
+        #' lists used by the plugin estimator.
         list_pair = NULL,
+        #' @field nfolds Integer scalar giving the number of cross-validation
+        #' folds.
         nfolds = NULL,
+        #' @field plugin_estimator Character scalar naming the plugin estimator
+        #' implementation.
         plugin_estimator = NULL,
 
+        #' @description Create a new \\code{PlugInOptions} instance.
+        #' @param model Character scalar identifying the model family.
+        #' @param threshold Numeric scalar giving the threshold applied by
+        #' threshold-based selection methods.
+        #' @param list_pair Character vector of length two naming the capture
+        #' lists used by the plugin estimator.
+        #' @param nfolds Integer scalar giving the number of cross-validation
+        #' folds.
+        #' @param plugin_estimator Character scalar naming the plugin estimator
+        #' implementation.
+        #' @return The initialized \\code{PlugInOptions} object.
         initialize = function(
             model,
             threshold,

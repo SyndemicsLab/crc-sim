@@ -34,7 +34,13 @@ crc_aic <- function(data, opts) {
         stop("Invalid AICOptions object provided.")
     }
 
-    # TODO: validate the data is a frequency table
+    if (!is_frequency_table(data, opts$frequency_column)) {
+        stop(paste(
+            "Data must be a frequency table with a numeric frequency column",
+            opts$frequency_column
+        ))
+    }
+
     output <- map(
         opts$formulas,
         evaluate_formula_with_aic,

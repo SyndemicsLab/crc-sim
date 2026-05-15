@@ -4,46 +4,15 @@
 \alias{crc}
 \title{Spatial Capture Re-Capture}
 \usage{
-crc(
-  data,
-  freq_column,
-  binary_variables,
-  method = "poisson",
-  formula_selection = "stepwise",
-  formula = NULL,
-  opts_stepwise = list(direction = "both", threshold = 0.05, verbose = TRUE),
-  opts_tmle = list(list_pair = NULL, funcname = "logit", nfolds = 2, margin = 0.005,
-    estimator = "TMLE", expansion_mode = "exact", sample_size = 1e+05, warn_expanded_rows
-    = 1e+06)
-)
+crc(data, opts)
 }
 \arguments{
 \item{data}{Dataframe: A dataframe containing a frequency column and binary
 columns indicating involvement in the given database}
 
-\item{freq_column}{Column: A column containing the frequency of observed
-combinations}
-
-\item{binary_variables}{List of Columns: List containing columns of binary
-variables indicating involvement in the given database}
-
-\item{method}{String: Selection for the spatial capture-recapture method -
-either 'poisson' or 'negbin'}
-
-\item{formula_selection}{String: Selection for formula decision - either
-'aic', 'stepwise', or 'tmle'}
-
-\item{formula}{Formula: Optional custom formula object for regression}
-
-\item{opts_stepwise}{List: List of \code{direction}: 'forward', 'backward',
-or 'both', \code{threshold}: p-value threshold for stepwise selection, and
-\code{verbose} if you would like every stepped-through model to be printed}
-
-\item{opts_tmle}{List: TMLE options where \code{list_pair} is required and
-should specify two capture columns (e.g., \code{c("capture_1","capture_2")}).
-Optional fields include \code{funcname}, \code{nfolds}, \code{margin},
-\code{estimator}, \code{expansion_mode}, \code{sample_size}, and
-\code{warn_expanded_rows}}
+\item{opts}{Options Object: An object containing the options for the CRC
+estimation. This should be an instance of one of the options classes defined
+in options.R, such as AICOptions, StepwiseOptions, or PluginOptions.}
 }
 \description{
 A method for estimation of 'unknowns' through knowledge about knowns as
@@ -53,5 +22,5 @@ doi:10.2105/AJPH.2018.304673
 }
 \details{
 This implementation supports poisson and negative binomial regression models
-with either AIC-based, stepwise, or TMLE formula selection.
+with either AIC-based/stepwise formula selection or plugin estimators.
 }
