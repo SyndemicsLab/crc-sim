@@ -1,4 +1,6 @@
 # IDE Details
+.vscode/
+.Rproj.user/
 
 # History files
 .Rhistory
