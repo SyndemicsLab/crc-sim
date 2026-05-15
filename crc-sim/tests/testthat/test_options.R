@@ -7,7 +7,7 @@
 # Last Modified: 2026-05-15                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
-# Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
+# Copyright (c) 2026 Your Company                                              #
 ################################################################################
 
 test_that("AICOptions returns the provided formula when formula is present", {
@@ -41,12 +41,8 @@ test_that(
         "are missing"
     ),
     {
-        opts <- AICOptions$new(model = "poisson")
-        print(opts$formulas)
-        print(opts$frequency_col_name)
-        print(opts$binary_variables)
         expect_error(
-            opts,
+            AICOptions$new(model = "poisson"),
             paste(
                 "If formula is not provided, frequency_col_name and",
                 "binary_variables must be specified."

@@ -7,7 +7,7 @@
 # Last Modified: 2026-05-15                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
-# Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
+# Copyright (c) 2026 Your Company                                              #
 ################################################################################
 
 ## NOTE: This file turns off formatting for many of the R6 class definitions to
@@ -250,22 +250,22 @@ AICOptions <- R6::R6Class( # nolint: object_name_linter
         # @return A formula object or collection of formulas for AIC model
         # evaluation.
         validate_formula_input = function(
-            freq_column,
+            frequency_col_name,
             binary_variables,
             formula
         ) {
             if (!is.null(formula)) {
                 return(formula)
             }
-            if (is.null(freq_column) || is.null(binary_variables)) {
+            if (is.null(frequency_col_name) || is.null(binary_variables)) {
                 stop(
                     paste(
-                        "If formula is not provided, frequency_column and",
+                        "If formula is not provided, frequency_col_name and",
                         "binary_variables must be specified."
                     )
                 )
             }
-            return(formula_list(freq_column, binary_variables))
+            return(formula_list(frequency_col_name, binary_variables))
         }
     )
 )
