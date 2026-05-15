@@ -4,7 +4,7 @@
 # Created Date: 2026-05-05                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-05                                                    #
+# Last Modified: 2026-05-15                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -31,7 +31,7 @@ is_formula <- function(x) {
 #' @importFrom stats as.formula
 #'
 #' @export
-
+# nolint start: cyclocomplexity_linter
 formula_list <- function(y, x) {
     n <- length(x)
     all_formulas <- list()
@@ -73,3 +73,4 @@ formula_list <- function(y, x) {
 
     return(lapply(unique(all_formulas), as.formula))
 }
+# nolint end: cyclocomplexity_linter

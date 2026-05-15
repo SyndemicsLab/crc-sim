@@ -1,10 +1,10 @@
 ################################################################################
-# File: aic_selection.R                                                        #
+# File: crc_aic.R                                                              #
 # Project: crc-sim                                                             #
 # Created Date: 2026-05-14                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-14                                                    #
+# Last Modified: 2026-05-15                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -26,15 +26,20 @@
 #'
 #' @importFrom purrr map
 #' @importFrom dplyr bind_rows arrange
+#'
 #' @keywords internal
 #' @export
-run_crc_aic <- function(data, formulas, model_family = c("poisson", "negbin")) {
-    model_family <- match.arg(model_family)
+crc_aic <- function(data, opts) {
+    if (!inherits(opts, "AICOptions")) {
+        stop("Invalid AICOptions object provided.")
+    }
+
+    # TODO: validate the data is a frequency table
     output <- map(
-        formulas,
+        opts$formulas,
         evaluate_formula_with_aic,
         data = data,
-        method = model_family
+        model_family = opts$model
     ) |>
         bind_rows(results) |>
         arrange(.data[[AIC]])

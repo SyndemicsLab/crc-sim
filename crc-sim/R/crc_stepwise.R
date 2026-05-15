@@ -1,36 +1,46 @@
 ################################################################################
-# File: stepwise_selection.R                                                   #
+# File: crc_stepwise.R                                                         #
 # Project: crc-sim                                                             #
 # Created Date: 2026-05-14                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-14                                                    #
+# Last Modified: 2026-05-15                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
 ################################################################################
 
 #' Run CRC with Stepwise Formula Selection.
+#' @description This function runs CRC using stepwise regression for formula
+#' selection. It takes in the data and options for stepwise regression, fits the
+#' specified model using stepwise regression, and returns a list with the final
+#' formula, estimate, confidence interval, and AIC value for the selected model.
+#'
+#' @param data a data frame containing the observed capture histories and a
+#' frequency column.
+#' @param opts a \code{StepwiseOptions} object specifying the options for
+#' stepwise regression, including the model family, p-value threshold for
+#' variable inclusion, and stepwise direction.
 #'
 #' @keywords internal
 #' @export
-run_crc_stepwise <- function(
-    data,
-    freq_column,
-    binary_variables,
-    method,
-    opts_stepwise
-) {
-    return(step_regression(
+crc_stepwise <- function(data, opts) {
+    if (!inherits(opts, "StepwiseOptions")) {
+        stop("Invalid StepwiseOptions object provided.")
+    }
+
+    # TODO: validate the data is a frequency table
+    output <- step_regression(
         data,
-        freq_column,
-        binary_variables,
-        p_threshold = opts_stepwise$threshold,
-        direction = opts_stepwise$direction,
-        method = method,
-        verbose = opts_stepwise$verbose,
-        k = 2
-    ))
+        opts$freq_column,
+        opts$capture_indicators,
+        p_threshold = opts$threshold,
+        direction = opts$direction,
+        method = opts$model,
+        k = opts$interaction_limit
+    )
+
+    return(output)
 }
 
 
@@ -55,12 +65,13 @@ step_regression <- function(
     y,
     x,
     model_family = c("poisson", "negbin"),
-    direction = "both",
+    direction = c("both", "backward", "forward"),
     p_threshold = 0.05,
-    k = 2,
-    verbose = TRUE
+    k = 2
 ) {
     model_family <- match.arg(model_family)
+    direction <- match.arg(direction)
+
     formula_init <- as.formula(paste(y, "~", paste(x, collapse = " + ")))
     formula_max <- as.formula(paste(
         y,
@@ -72,25 +83,25 @@ step_regression <- function(
 
     model <- fit_loglinear_model(data, formula_init, model_family)
 
-    step(
+    final_model <- step(
         model,
         scope = list(upper = formula_max, lower = formula_init),
         direction = direction,
         k = log(nrow(data))
     )
 
-    intercept <- coef(final_mod)[1]
+    intercept <- coef(final_model)[1]
     estimate <- exp(intercept)
-    ci <- exp(confint(final_mod)[1, ])
+    ci <- exp(confint(final_model)[1, ])
 
     results <- list(
-        model = method,
-        formula = formula(final_mod),
-        summary = summary(final_mod),
+        model = model_family,
+        formula = formula(final_model),
+        summary = summary(final_model),
         estimate = unname(round(estimate, 2)),
         lower_ci = unname(round(ci[1], 2)),
         upper_ci = unname(round(ci[2], 2)),
-        AIC = AIC(final_mod)
+        AIC = AIC(final_model)
     )
 
     return(results)

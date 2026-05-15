@@ -4,7 +4,7 @@
 # Created Date: 2026-05-14                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-14                                                    #
+# Last Modified: 2026-05-15                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -25,7 +25,7 @@
 #'
 #' @importFrom drpop popsize
 #' @export
-logit_estimate <- function(data, nfolds = 2, margin = 0.005) {
+ranger_estimate <- function(data, nfolds = 2, margin = 0.005) {
     qhat <- data |>
         all_int_cols_to_numeric() |>
         popsize(
