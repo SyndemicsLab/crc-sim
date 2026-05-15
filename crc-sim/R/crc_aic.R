@@ -34,10 +34,10 @@ crc_aic <- function(data, opts) {
         stop("Invalid AICOptions object provided.")
     }
 
-    if (!is_frequency_table(data, opts$frequency_column)) {
+    if (!is_frequency_table(data, opts$frequency_col_name)) {
         stop(paste(
             "Data must be a frequency table with a numeric frequency column",
-            opts$frequency_column
+            opts$frequency_col_name
         ))
     }
 
@@ -47,8 +47,8 @@ crc_aic <- function(data, opts) {
         data = data,
         model_family = opts$model
     ) |>
-        bind_rows(results) |>
-        arrange(.data[[AIC]])
+        bind_rows() |>
+        arrange(.data[["AIC"]])
 
     return(output)
 }
@@ -77,7 +77,7 @@ evaluate_formula_with_aic <- function(
     model_family <- match.arg(model_family)
     return(tryCatch(
         {
-            model <- fit_loglinear_model(formula_object, data, model_family)
+            model <- fit_loglinear_model(data, formula_object, model_family)
             return(build_aic_success_row(model, formula_object))
         },
         error = function(error) {
