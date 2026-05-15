@@ -24,20 +24,26 @@
 #'
 #' @keywords internal
 #' @export
-crc_stepwise <- function(data, opts) {
+crc_stepwise <- function(data, opts, verbose = FALSE) {
     if (!inherits(opts, "StepwiseOptions")) {
         stop("Invalid StepwiseOptions object provided.")
     }
 
-    # TODO: validate the data is a frequency table
+    if (!is_frequency_table(data, opts$frequency_col_name)) {
+        stop(paste(
+            "Data must be a frequency table with a numeric frequency column",
+            opts$frequency_col_name
+        ))
+    }
     output <- step_regression(
         data,
-        opts$freq_column,
+        opts$frequency_col_name,
         opts$capture_indicators,
         p_threshold = opts$threshold,
         direction = opts$direction,
-        method = opts$model,
-        k = opts$interaction_limit
+        model_family = opts$model,
+        k = opts$interaction_limit,
+        verbose = verbose
     )
 
     return(output)
@@ -67,7 +73,8 @@ step_regression <- function(
     model_family = c("poisson", "negbin"),
     direction = c("both", "backward", "forward"),
     p_threshold = 0.05,
-    k = 2
+    k = 2,
+    verbose = FALSE
 ) {
     model_family <- match.arg(model_family)
     direction <- match.arg(direction)
@@ -83,12 +90,26 @@ step_regression <- function(
 
     model <- fit_loglinear_model(data, formula_init, model_family)
 
-    final_model <- step(
-        model,
-        scope = list(upper = formula_max, lower = formula_init),
-        direction = direction,
-        k = log(nrow(data))
-    )
+    if (verbose) {
+        final_model <- step(
+            model,
+            scope = list(upper = formula_max, lower = formula_init),
+            direction = direction,
+            k = log(nrow(data))
+        )
+    } else {
+        suppressMessages(
+            capture.output(
+                final_model <- step(
+                    model,
+                    scope = list(upper = formula_max, lower = formula_init),
+                    direction = direction,
+                    k = log(nrow(data))
+                ),
+                file = NULL
+            )
+        )
+    }
 
     intercept <- coef(final_model)[1]
     estimate <- exp(intercept)
