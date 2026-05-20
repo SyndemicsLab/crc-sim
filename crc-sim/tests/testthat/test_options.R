@@ -4,10 +4,10 @@
 # Created Date: 2026-05-15                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-15                                                    #
+# Last Modified: 2026-05-19                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
-# Copyright (c) 2026 Your Company                                              #
+# Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
 ################################################################################
 
 test_that("AICOptions returns the provided formula when formula is present", {
@@ -142,29 +142,29 @@ test_that(
     }
 )
 
-# Test 4: PlugInOptions constructor mapping
+# Test 4: EstimatorOptions constructor mapping
 test_that(
     paste(
-        "PlugInOptions initializes all fields including",
+        "EstimatorOptions initializes all fields including",
         "inherited model and threshold"
     ),
     {
-        opts <- PlugInOptions$new(
+        opts <- EstimatorOptions$new(
             model = "logit",
             threshold = 0.10,
             list_pair = c("list_A", "list_B"),
             nfolds = 5,
-            plugin_estimator = "ranger"
+            estimator = "ranger"
         )
 
         # Check inherited fields
         expect_equal(opts$model, "logit")
         expect_equal(opts$threshold, 0.10)
 
-        # Check PlugInOptions-specific fields
+        # Check EstimatorOptions-specific fields
         expect_equal(opts$list_pair, c("list_A", "list_B"))
         expect_equal(opts$nfolds, 5)
-        expect_equal(opts$plugin_estimator, "ranger")
+        expect_equal(opts$estimator, "ranger")
     }
 )
 
@@ -202,17 +202,17 @@ test_that(
 )
 
 test_that(
-    paste("PlugInOptions inherits from Options"),
+    paste("EstimatorOptions inherits from Options"),
     {
-        opts <- PlugInOptions$new(
+        opts <- EstimatorOptions$new(
             model = "logit",
             threshold = 0.10,
             list_pair = c("list_A", "list_B"),
             nfolds = 5,
-            plugin_estimator = "ranger"
+            estimator = "ranger"
         )
 
-        expect_s3_class(opts, "PlugInOptions")
+        expect_s3_class(opts, "EstimatorOptions")
         expect_s3_class(opts, "Options")
     }
 )
@@ -286,21 +286,21 @@ test_that(
 )
 
 test_that(
-    paste("PlugInOptions initialize method returns the same", "instance"),
+    paste("EstimatorOptions initialize method returns the same", "instance"),
     {
-        opts <- PlugInOptions$new(
+        opts <- EstimatorOptions$new(
             model = "logit",
             threshold = 0.10,
             list_pair = c("list_A", "list_B"),
             nfolds = 5,
-            plugin_estimator = "ranger"
+            estimator = "ranger"
         )
         result <- opts$initialize(
             model = "gam",
             threshold = 0.15,
             list_pair = c("L1", "L2"),
             nfolds = 10,
-            plugin_estimator = "logit"
+            estimator = "logit"
         )
 
         expect_identical(result, opts)

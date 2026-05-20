@@ -10,6 +10,19 @@
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
 ################################################################################
 
+#' A function used to check if a column in a data frame is binary
+#' (i.e., contains only 0s and 1s).
+#'
+#' @param column a vector representing a column in a data frame
+#' @returns a boolean indicating whether the column is binary
+#'
+#' @keywords internal
+#' @export
+is_column_binary <- function(column) {
+    unique_values <- unique(column)
+    return(length(unique_values) == 2 && all(unique_values %in% c(0, 1)))
+}
+
 #' A function used to check if the provided data is a frequency table. This is
 #' necessary as the CRC estimation functions require a frequency table as input.
 #'

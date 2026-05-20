@@ -4,10 +4,10 @@
 # Created Date: 2026-05-15                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-15                                                    #
+# Last Modified: 2026-05-20                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
-# Copyright (c) 2026 Your Company                                              #
+# Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
 ################################################################################
 
 ## NOTE: This file turns off formatting for many of the R6 class definitions to
@@ -279,12 +279,11 @@ AICOptions <- R6::R6Class( # nolint: object_name_linter
 #' two capture lists to be used for the plugin estimator.
 #' @param nfolds The number of folds to use for cross-validation when fitting
 #' the plugin estimator model.
-#' @param plugin_estimator The type of plugin estimator to use, either "logit",
-#' "ranger", "rangerlogit", or "gam".
+#' @param estimator Character scalar naming the plugin estimator implementation.
 #' @export
 # fmt: skip
-PlugInOptions <- R6::R6Class( # nolint: object_name_linter
-    "PlugInOptions",
+EstimatorOptions <- R6::R6Class( # nolint: object_name_linter
+    "EstimatorOptions",
     inherit = Options,
     public = list(
         #' @field list_pair Character vector of length two naming the capture
@@ -293,11 +292,15 @@ PlugInOptions <- R6::R6Class( # nolint: object_name_linter
         #' @field nfolds Integer scalar giving the number of cross-validation
         #' folds.
         nfolds = NULL,
-        #' @field plugin_estimator Character scalar naming the plugin estimator
+        #' @field capture_columns Character vector naming the binary capture
+        #' indicator columns. If NULL, these will be inferred from the data when
+        #' running CRC.
+        capture_columns = NULL,
+        #' @field estimator Character scalar naming the plugin estimator
         #' implementation.
-        plugin_estimator = NULL,
+        estimator = NULL,
 
-        #' @description Create a new \\code{PlugInOptions} instance.
+        #' @description Create a new \\code{EstimatorOptions} instance.
         #' @param model Character scalar identifying the model family.
         #' @param threshold Numeric scalar giving the threshold applied by
         #' threshold-based selection methods.
@@ -305,20 +308,26 @@ PlugInOptions <- R6::R6Class( # nolint: object_name_linter
         #' lists used by the plugin estimator.
         #' @param nfolds Integer scalar giving the number of cross-validation
         #' folds.
-        #' @param plugin_estimator Character scalar naming the plugin estimator
+        #' @param capture_columns Character vector naming the binary capture
+        #' indicator columns. If NULL, all binary columns will be assumed to be
+        #' capture indicators.
+        #' @param estimator Character scalar naming the plugin estimator
         #' implementation.
-        #' @return The initialized \\code{PlugInOptions} object.
+        #' @return The initialized \\code{EstimatorOptions} object.
         initialize = function(
             model,
             threshold,
             list_pair,
             nfolds,
-            plugin_estimator
+            capture_columns,
+            estimator = c("DR", "PI", "TMLE")
         ) {
+            estimator <- match.arg(estimator)
             super$initialize(model, threshold)
             self$list_pair <- list_pair
             self$nfolds <- nfolds
-            self$plugin_estimator <- plugin_estimator
+            self$capture_columns <- capture_columns
+            self$estimator <- estimator
             return(self)
         }
     )

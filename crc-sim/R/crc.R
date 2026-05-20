@@ -4,7 +4,7 @@
 # Created Date: 2026-02-23                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-15                                                    #
+# Last Modified: 2026-05-20                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -24,7 +24,7 @@
 #' columns indicating involvement in the given database
 #' @param opts Options Object: An object containing the options for the CRC
 #' estimation. This should be an instance of one of the options classes defined
-#' in options.R, such as AICOptions, StepwiseOptions, or PluginOptions.
+#' in options.R, such as AICOptions, StepwiseOptions, or EstimatorOptions.
 #'
 #' @export
 crc <- function(data, opts) {
@@ -36,8 +36,8 @@ crc <- function(data, opts) {
         } else {
             stop("Invalid FrequencyOptions object provided.")
         }
-    } else if (inherits(opts, "PluginOptions")) {
-        return(crc_plugin(data, opts))
+    } else if (inherits(opts, "EstimatorOptions")) {
+        return(crc_row_level_estimator(data, opts))
     }
     stop("Invalid options object provided.")
 }

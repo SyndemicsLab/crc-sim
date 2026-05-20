@@ -149,7 +149,7 @@ test_that("crc_stepwise returns formula object", {
 
     result <- crc_stepwise(data, opts)
 
-    expect_true(inherits(result$formula, "formula"))
+    expect_s3_class(result$formula, "formula")
 })
 
 test_that("crc_stepwise returns model family string", {
@@ -172,8 +172,8 @@ test_that("crc_stepwise works with poisson model", {
     result <- crc_stepwise(data, opts)
 
     expect_equal(result$model, "poisson")
-    expect_true(!is.na(result$estimate))
-    expect_true(!is.na(result$AIC))
+    expect_false(is.na(result$estimate))
+    expect_false(is.na(result$AIC))
 })
 
 test_that("crc_stepwise works with negbin model", {
@@ -183,8 +183,8 @@ test_that("crc_stepwise works with negbin model", {
     result <- crc_stepwise(data, opts)
 
     expect_equal(result$model, "negbin")
-    expect_true(!is.na(result$estimate))
-    expect_true(!is.na(result$AIC))
+    expect_false(is.na(result$estimate))
+    expect_false(is.na(result$AIC))
 })
 
 test_that("crc_stepwise respects interaction_limit = 2", {
@@ -193,7 +193,7 @@ test_that("crc_stepwise respects interaction_limit = 2", {
 
     result <- crc_stepwise(data, opts)
 
-    expect_true(!is.na(result$AIC))
+    expect_false(is.na(result$AIC))
 })
 
 test_that("crc_stepwise respects interaction_limit = 3", {
@@ -202,7 +202,7 @@ test_that("crc_stepwise respects interaction_limit = 3", {
 
     result <- crc_stepwise(data, opts)
 
-    expect_true(!is.na(result$AIC))
+    expect_false(is.na(result$AIC))
 })
 
 # ============================================================================
@@ -220,7 +220,7 @@ test_that("crc_stepwise works with minimal data", {
 
     result <- crc_stepwise(small_data, opts)
 
-    expect_true(!is.na(result$estimate))
+    expect_false(is.na(result$estimate))
 })
 
 test_that("crc_stepwise works with larger datasets", {
@@ -234,7 +234,7 @@ test_that("crc_stepwise works with larger datasets", {
 
     result <- crc_stepwise(large_data, opts)
 
-    expect_true(!is.na(result$estimate))
+    expect_false(is.na(result$estimate))
 })
 
 test_that("crc_stepwise results are reproducible with seed", {
@@ -279,8 +279,8 @@ test_that("crc_stepwise handles case where formula does not reduce", {
 
     result <- crc_stepwise(data, opts)
 
-    expect_true(!is.na(result$AIC))
-    expect_true(!is.na(result$estimate))
+    expect_false(is.na(result$AIC))
+    expect_false(is.na(result$estimate))
 })
 
 # ============================================================================
@@ -294,8 +294,8 @@ test_that("crc_stepwise works with direction = 'forward'", {
     result <- crc_stepwise(data, opts)
 
     expect_equal(result$model, "poisson")
-    expect_true(!is.na(result$estimate))
-    expect_true(!is.na(result$AIC))
+    expect_false(is.na(result$estimate))
+    expect_false(is.na(result$AIC))
 })
 
 test_that("crc_stepwise works with direction = 'backward'", {
@@ -305,8 +305,8 @@ test_that("crc_stepwise works with direction = 'backward'", {
     result <- crc_stepwise(data, opts)
 
     expect_equal(result$model, "poisson")
-    expect_true(!is.na(result$estimate))
-    expect_true(!is.na(result$AIC))
+    expect_false(is.na(result$estimate))
+    expect_false(is.na(result$AIC))
 })
 
 test_that("crc_stepwise works with direction = 'both'", {
@@ -316,8 +316,8 @@ test_that("crc_stepwise works with direction = 'both'", {
     result <- crc_stepwise(data, opts)
 
     expect_equal(result$model, "poisson")
-    expect_true(!is.na(result$estimate))
-    expect_true(!is.na(result$AIC))
+    expect_false(is.na(result$estimate))
+    expect_false(is.na(result$AIC))
 })
 
 test_that("forward direction with interaction_limit = 2", {
@@ -329,8 +329,8 @@ test_that("forward direction with interaction_limit = 2", {
 
     result <- crc_stepwise(data, opts)
 
-    expect_true(!is.na(result$AIC))
-    expect_true(!is.na(result$estimate))
+    expect_false(is.na(result$AIC))
+    expect_false(is.na(result$estimate))
 })
 
 test_that("backward direction with interaction_limit = 2", {
@@ -342,8 +342,8 @@ test_that("backward direction with interaction_limit = 2", {
 
     result <- crc_stepwise(data, opts)
 
-    expect_true(!is.na(result$AIC))
-    expect_true(!is.na(result$estimate))
+    expect_false(is.na(result$AIC))
+    expect_false(is.na(result$estimate))
 })
 
 test_that("forward direction with negbin model", {
@@ -356,7 +356,7 @@ test_that("forward direction with negbin model", {
     result <- crc_stepwise(data, opts)
 
     expect_equal(result$model, "negbin")
-    expect_true(!is.na(result$AIC))
+    expect_false(is.na(result$AIC))
 })
 
 test_that("backward direction with negbin model", {
@@ -369,7 +369,7 @@ test_that("backward direction with negbin model", {
     result <- crc_stepwise(data, opts)
 
     expect_equal(result$model, "negbin")
-    expect_true(!is.na(result$AIC))
+    expect_false(is.na(result$AIC))
 })
 
 test_that("forward direction with interaction_limit = 3", {
@@ -381,7 +381,7 @@ test_that("forward direction with interaction_limit = 3", {
 
     result <- crc_stepwise(data, opts)
 
-    expect_true(!is.na(result$AIC))
+    expect_false(is.na(result$AIC))
 })
 
 test_that("backward direction with interaction_limit = 3", {
@@ -393,7 +393,7 @@ test_that("backward direction with interaction_limit = 3", {
 
     result <- crc_stepwise(data, opts)
 
-    expect_true(!is.na(result$AIC))
+    expect_false(is.na(result$AIC))
 })
 
 test_that("forward direction produces valid confidence interval", {

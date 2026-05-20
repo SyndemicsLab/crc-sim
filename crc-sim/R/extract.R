@@ -4,13 +4,30 @@
 # Created Date: 2026-02-17                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-05                                                    #
+# Last Modified: 2026-05-19                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
 ################################################################################
 
+#' Filter Captured Rows
+#' @description Internal function to filter rows where all capture columns
+#' are 0.
+#'
+#' @param data_table data.frame: contingency table containing capture columns
+#' @param capture character vector: names of capture columns
+#' @returns tibble containing only uncaptured rows
+#' @keywords internal
+#' @noRd
+filter_captured_rows <- function(data_table, capture) {
+    captured_rows <- tibble::as_tibble(data_table) |>
+        dplyr::filter(rowSums(across(capture)) != 0)
+    return(captured_rows)
+}
+
 #' Filter Uncaptured Rows
+#' @description Internal function to filter rows where all capture columns
+#' are 0.
 #'
 #' @param data_table data.frame: contingency table containing capture columns
 #' @param capture character vector: names of capture columns
@@ -19,12 +36,7 @@
 #' @noRd
 filter_uncaptured_rows <- function(data_table, capture) {
     uncaptured_rows <- tibble::as_tibble(data_table) |>
-        dplyr::mutate(
-            tmp_capture_sum = rowSums(dplyr::across(dplyr::all_of(capture)))
-        ) |>
-        dplyr::filter(.data$tmp_capture_sum == 0) |>
-        dplyr::select(-.data$tmp_capture_sum)
-
+        dplyr::filter(rowSums(across(capture)) == 0)
     return(uncaptured_rows)
 }
 
