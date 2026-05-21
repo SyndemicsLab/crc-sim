@@ -1,10 +1,10 @@
 ################################################################################
-# File: create.R                                                               #
+# File: data_control.R                                                         #
 # Project: crc-sim                                                             #
 # Created Date: 2026-02-17                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-14                                                    #
+# Last Modified: 2026-05-21                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -72,6 +72,127 @@ create_data <- function(
     return(records)
 }
 
+#' Apply Suppression to Frequency Table Data.
+#' This function takes a frequency table dataset and applies suppression to the
+#' frequency column.
+#'
+#' @param data data.frame: the frequency table dataset to apply suppression to
+#' @param suppression_threshold int: the threshold at which to apply
+#' suppression.
+#' @param freq_col string: the name of the frequency column in the dataset.
+#' Default is "N_ID".
+#' @return a data.frame with suppression applied to the frequency column
+#'
+#' @importFrom dplyr mutate ifelse
+#' @export
+suppress_data <- function(data, suppression_threshold, freq_col = "N_ID") {
+    if (!isTRUE(suppression_threshold > 0)) {
+        return(data)
+    }
+
+    if (!freq_col %in% colnames(data)) {
+        stop(
+            "Frequency column N_ID not found in data. Cannot apply suppression."
+        )
+    }
+    suppressed_data <- data |>
+        dplyr::mutate(
+            {{ freq_col }} := ifelse(
+                {{ freq_col }} <= suppression_threshold,
+                -1,
+                {{ freq_col }}
+            )
+        )
+
+    return(suppressed_data)
+}
+
+#' Get Captured Rows
+#' @description Function to filter out rows where all capture columns are not 0.
+#' This is used to identify all the captured rows in a dataset.
+#'
+#' @param data_table data.frame: Data frame containing either a frequency table
+#' or individual records with capture columns.
+#' @param capture character vector: names of capture columns
+#' @returns tibble containing only rows where people are captured.
+#'
+#' @importFrom dplyr filter across
+#' @importFrom tibble as_tibble
+#' @export
+extract_captured_data <- function(data_table, capture) {
+    captured_rows <- tibble::as_tibble(data_table) |>
+        dplyr::filter(rowSums(dplyr::across(capture)) != 0)
+    return(captured_rows)
+}
+
+#' Get Uncaptured Rows
+#' @description Function to filter out rows where all capture columns are 0.
+#' This is used to identify all the uncaptured rows in a dataset, which is
+#' necessary for extracting a ground truth value for simulation evaluation.
+#'
+#' @param data_table data.frame: Data frame containing either a frequency table
+#' or individual records with capture columns.
+#' @param capture character vector: names of capture columns
+#' @returns tibble containing only rows where people are uncaptured.
+#'
+#' @importFrom dplyr filter across
+#' @importFrom tibble as_tibble
+#' @export
+extract_uncaptured_data <- function(data_table, capture) {
+    uncaptured_rows <- tibble::as_tibble(data_table) |>
+        dplyr::filter(rowSums(dplyr::across(capture)) == 0)
+    return(uncaptured_rows)
+}
+
+#' A function used to check if a column in a data frame is binary
+#' (i.e., contains only 0s and 1s).
+#'
+#' @param column a vector representing a column in a data frame
+#' @returns a boolean indicating whether the column is binary
+#'
+#' @keywords internal
+#' @export
+is_column_binary <- function(column) {
+    unique_values <- unique(column)
+    return(length(unique_values) == 2 && all(unique_values %in% c(0, 1)))
+}
+
+#' A function used to check if the provided data is a frequency table. This is
+#' necessary as the CRC estimation functions require a frequency table as input.
+#'
+#' @param data a data frame
+#' @param frequency_column a string specifying the name of the frequency column
+#' in the data frame
+#' @returns a boolean indicating whether the data frame is a frequency table
+#' (i.e., contains the specified frequency column and that column is numeric)
+#'
+#' @keywords internal
+#' @export
+is_frequency_table <- function(data, frequency_column) {
+    if (
+        frequency_column %in%
+            names(data) &&
+            is.numeric(data[[frequency_column]])
+    ) {
+        return(TRUE)
+    }
+    return(FALSE)
+}
+
+#' A function used to convert all integer columns to numeric. This is necessary
+#' as the drpop package requires all data columns to be numerics.
+#' This is a temporary workaround until we can implement our own TMLE estimation
+#' function that can handle integer columns.
+#'
+#' @param df a data frame
+#' @returns a data frame with all integer columns converted to numeric
+#'
+#' @importFrom dplyr mutate across where
+#' @keywords internal
+#' @export
+all_int_cols_to_numeric <- function(df) {
+    return(mutate(df, across(where(is.integer), as.numeric)))
+}
 
 #' Build Individual Simulation Records. This builds all the individual records
 #' for a simulated dataset. Each record produced by this function represents
@@ -88,6 +209,7 @@ create_data <- function(
 #' to the number of category columns. Must sum to 1.
 #' @returns a tibble where each row is an individual record
 #'
+#' @keywords internal
 #' @export
 build_individual_records <- function(
     n_individuals,
@@ -115,6 +237,7 @@ build_individual_records <- function(
 #' aggregated and a frequency column \code{N_ID} is appended.
 #'
 #' @importFrom dplyr count across everything
+#' @keywords internal
 #' @export
 build_contingency_table <- function(records) {
     return(count(records, across(everything()), name = "N_ID"))

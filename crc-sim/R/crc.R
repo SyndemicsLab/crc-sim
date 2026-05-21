@@ -4,7 +4,7 @@
 # Created Date: 2026-02-23                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-20                                                    #
+# Last Modified: 2026-05-21                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -12,10 +12,10 @@
 
 #' Spatial Capture Re-Capture
 #'
-#' A method for estimation of 'unknowns' through knowledge about knowns as
-#' described by Barocas, Joshua A et al. "Estimated Prevalence of Opioid Use
-#' Disorder in Massachusetts, 2011-2015: A Capture-Recapture Analysis."
-#' doi:10.2105/AJPH.2018.304673
+#' @description A method for estimation of 'unknowns' through knowledge about
+#' knowns as described by Barocas, Joshua A et al. "Estimated Prevalence of
+#' Opioid Use Disorder in Massachusetts, 2011-2015: A Capture-Recapture
+#' Analysis." doi:10.2105/AJPH.2018.304673
 #'
 #' This implementation supports poisson and negative binomial regression models
 #' with either AIC-based/stepwise formula selection or plugin estimators.

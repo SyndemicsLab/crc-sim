@@ -4,7 +4,7 @@
 # Created Date: 2026-05-15                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-20                                                    #
+# Last Modified: 2026-05-21                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -34,6 +34,9 @@ Options <- R6::R6Class( # nolint: object_name_linter
         #' @field model Character scalar identifying either the log-linear
         #' model or the nuisance function to utilize.
         model = NULL,
+        #' @field capture_columns Character vector naming the binary capture
+        #' indicator columns.
+        capture_columns = NULL,
         #' @field threshold Numeric scalar giving the threshold applied by
         #' threshold-based selection methods or the margin desired by stepwise
         #' selection.
@@ -46,8 +49,9 @@ Options <- R6::R6Class( # nolint: object_name_linter
         #' threshold-based selection methods or the margin desired by stepwise
         #' selection.
         #' @return The initialized \\code{Options} object.
-        initialize = function(model, threshold) {
+        initialize = function(model, capture_columns, threshold) {
             self$model <- model
+            self$capture_columns <- capture_columns
             self$threshold <- threshold
             return(self)
         }
@@ -85,11 +89,12 @@ FrequencyOptions <- R6::R6Class( # nolint: object_name_linter
         #' @return The initialized \\code{FrequencyOptions} object.
         initialize = function(
             model,
+            capture_columns,
             threshold,
             formulas,
             frequency_col_name
         ) {
-            super$initialize(model, threshold)
+            super$initialize(model, capture_columns, threshold)
             self$formulas <- formulas
             self$frequency_col_name <- frequency_col_name
             return(self)
@@ -144,9 +149,6 @@ StepwiseOptions <- R6::R6Class( # nolint: object_name_linter
         #' @field direction Character scalar specifying the stepwise search
         #' direction.
         direction = NULL,
-        #' @field capture_indicators Character vector naming the capture history
-        #' indicator columns.
-        capture_indicators = NULL,
         #' @field interaction_limit Integer scalar giving the maximum order of
         #' interactions to include in the search.
         interaction_limit = 2,
@@ -166,20 +168,20 @@ StepwiseOptions <- R6::R6Class( # nolint: object_name_linter
         #' @return The initialized \\code{StepwiseOptions} object.
         initialize = function(
             model,
+            capture_columns,
             threshold,
             direction,
             frequency_col_name = "N_ID",
-            capture_indicators = NULL,
             interaction_limit = 2
         ) {
             super$initialize(
                 model,
+                capture_columns,
                 threshold,
                 formulas = NULL,
                 frequency_col_name = frequency_col_name
             )
             self$direction <- direction
-            self$capture_indicators <- capture_indicators
             self$interaction_limit <- interaction_limit
             return(self)
         }
@@ -219,19 +221,20 @@ AICOptions <- R6::R6Class( # nolint: object_name_linter
         #' @return The initialized \\code{AICOptions} object.
         initialize = function(
             model,
+            capture_columns,
             formula = NULL,
-            frequency_col_name = "N_ID",
-            capture_indicators = NULL
+            frequency_col_name = "N_ID"
         ) {
             super$initialize(
                 model,
+                capture_columns,
                 threshold = NULL,
                 formulas = NULL,
                 frequency_col_name = frequency_col_name
             )
             self$formulas <- private$validate_formula_input(
                 frequency_col_name,
-                capture_indicators,
+                capture_columns,
                 formula
             )
             return(self)
@@ -251,21 +254,21 @@ AICOptions <- R6::R6Class( # nolint: object_name_linter
         # evaluation.
         validate_formula_input = function(
             frequency_col_name,
-            binary_variables,
+            capture_columns,
             formula
         ) {
             if (!is.null(formula)) {
                 return(formula)
             }
-            if (is.null(frequency_col_name) || is.null(binary_variables)) {
+            if (is.null(frequency_col_name) || is.null(capture_columns)) {
                 stop(
                     paste(
                         "If formula is not provided, frequency_col_name and",
-                        "binary_variables must be specified."
+                        "capture_columns must be specified."
                     )
                 )
             }
-            return(formula_list(frequency_col_name, binary_variables))
+            return(formula_list(frequency_col_name, capture_columns))
         }
     )
 )
@@ -292,10 +295,6 @@ EstimatorOptions <- R6::R6Class( # nolint: object_name_linter
         #' @field nfolds Integer scalar giving the number of cross-validation
         #' folds.
         nfolds = NULL,
-        #' @field capture_columns Character vector naming the binary capture
-        #' indicator columns. If NULL, these will be inferred from the data when
-        #' running CRC.
-        capture_columns = NULL,
         #' @field estimator Character scalar naming the plugin estimator
         #' implementation.
         estimator = NULL,
@@ -316,17 +315,16 @@ EstimatorOptions <- R6::R6Class( # nolint: object_name_linter
         #' @return The initialized \\code{EstimatorOptions} object.
         initialize = function(
             model,
+            capture_columns,
             threshold,
             list_pair,
             nfolds,
-            capture_columns,
             estimator = c("DR", "PI", "TMLE")
         ) {
             estimator <- match.arg(estimator)
-            super$initialize(model, threshold)
+            super$initialize(model, capture_columns, threshold)
             self$list_pair <- list_pair
             self$nfolds <- nfolds
-            self$capture_columns <- capture_columns
             self$estimator <- estimator
             return(self)
         }

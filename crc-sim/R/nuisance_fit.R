@@ -4,7 +4,7 @@
 # Created Date: 2026-05-20                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-20                                                    #
+# Last Modified: 2026-05-21                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -21,6 +21,7 @@
 #' @return List with elements q1, q2, q12 (predicted capture probabilities)
 #'
 #' @keywords internal
+#' @export
 empirical_means <- function(train, test, j, k) {
     q_j <- mean(train[[j]])
     q_k <- mean(train[[k]])
@@ -135,7 +136,7 @@ glm_qhats <- function(
 ) {
     # no covariates
     if (ncol(train) <= n_capture_cols) {
-           return(empirical_means(train, test, j, k))
+        return(empirical_means(train, test, j, k))
     }
 
     # Fit logit models for each list
@@ -192,7 +193,7 @@ glm_qhats <- function(
 #' @export
 gam_qhats <- function(train, test, n_capture_cols, j, k, margin = 0.005, ...) {
     if (ncol(train) <= n_capture_cols) {
-    return(empirical_means(train, test, j, k))
+        return(empirical_means(train, test, j, k))
     }
 
     # Fit logit models for each list
@@ -267,7 +268,7 @@ random_forest_qhats <- function(
     ...
 ) {
     if (ncol(train) <= n_capture_cols) {
-           return(empirical_means(train, test, j, k))
+        return(empirical_means(train, test, j, k))
     }
 
     # Fit logit models for each list

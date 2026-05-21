@@ -4,7 +4,7 @@
 # Created Date: 2026-05-15                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-19                                                    #
+# Last Modified: 2026-05-21                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -154,7 +154,7 @@ test_that(
             threshold = 0.10,
             list_pair = c("list_A", "list_B"),
             nfolds = 5,
-            estimator = "ranger"
+            estimator = "PI"
         )
 
         # Check inherited fields
@@ -164,7 +164,7 @@ test_that(
         # Check EstimatorOptions-specific fields
         expect_equal(opts$list_pair, c("list_A", "list_B"))
         expect_equal(opts$nfolds, 5)
-        expect_equal(opts$estimator, "ranger")
+        expect_equal(opts$estimator, "PI")
     }
 )
 
@@ -209,7 +209,7 @@ test_that(
             threshold = 0.10,
             list_pair = c("list_A", "list_B"),
             nfolds = 5,
-            estimator = "ranger"
+            estimator = "DR"
         )
 
         expect_s3_class(opts, "EstimatorOptions")
@@ -293,14 +293,14 @@ test_that(
             threshold = 0.10,
             list_pair = c("list_A", "list_B"),
             nfolds = 5,
-            estimator = "ranger"
+            estimator = "TMLE"
         )
         result <- opts$initialize(
             model = "gam",
             threshold = 0.15,
             list_pair = c("L1", "L2"),
             nfolds = 10,
-            estimator = "logit"
+            estimator = "DR"
         )
 
         expect_identical(result, opts)
