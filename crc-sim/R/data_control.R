@@ -83,7 +83,7 @@ create_data <- function(
 #' Default is "N_ID".
 #' @return a data.frame with suppression applied to the frequency column
 #'
-#' @importFrom dplyr mutate ifelse
+#' @importFrom dplyr mutate
 #' @export
 suppress_data <- function(data, suppression_threshold, freq_col = "N_ID") {
     if (!isTRUE(suppression_threshold > 0)) {

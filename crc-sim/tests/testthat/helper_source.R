@@ -10,4 +10,20 @@
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
 ################################################################################
 
-library(crcsim)
+# Prefer source-based loading during local test/debug runs so testthat::test_file()
+# and debugger sessions exercise the current working tree, not an installed copy.
+if (
+	requireNamespace("pkgload", quietly = TRUE) &&
+		file.exists("DESCRIPTION") &&
+		dir.exists("R")
+) {
+	pkgload::load_all(
+		path = ".",
+		quiet = TRUE,
+		export_all = FALSE,
+		helpers = FALSE,
+		attach_testthat = FALSE
+	)
+} else {
+	library(crcsim)
+}

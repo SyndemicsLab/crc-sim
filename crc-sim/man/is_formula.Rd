@@ -2,15 +2,16 @@
 % Please edit documentation in R/formulas.R
 \name{is_formula}
 \alias{is_formula}
-\title{Formula Objects
-Generic test of an object being interpretable as a formula}
+\title{Is Formula}
 \usage{
 is_formula(x)
 }
 \arguments{
 \item{x}{object to be tested}
 }
+\value{
+TRUE if object inherits from class "formula", FALSE otherwise
+}
 \description{
-Formula Objects
 Generic test of an object being interpretable as a formula
 }

@@ -1,10 +1,10 @@
 ################################################################################
-# File: crc_stepwise.R                                                         #
+# File: stepwise_selection.R                                                   #
 # Project: crc-sim                                                             #
 # Created Date: 2026-05-14                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-15                                                    #
+# Last Modified: 2026-05-21                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -24,7 +24,7 @@
 #'
 #' @keywords internal
 #' @export
-crc_stepwise <- function(data, opts, verbose = FALSE) {
+stepwise_selection <- function(data, opts, verbose = FALSE) {
     if (!inherits(opts, "StepwiseOptions")) {
         stop("Invalid StepwiseOptions object provided.")
     }
@@ -38,7 +38,7 @@ crc_stepwise <- function(data, opts, verbose = FALSE) {
     output <- step_regression(
         data,
         opts$frequency_col_name,
-        opts$capture_indicators,
+        opts$capture_columns,
         p_threshold = opts$threshold,
         direction = opts$direction,
         model_family = opts$model,

@@ -1,10 +1,10 @@
 ################################################################################
-# File: crc_row_level_estimator.R                                              #
+# File: row_level_estimation.R                                                 #
 # Project: crc-sim                                                             #
 # Created Date: 2026-05-15                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-20                                                    #
+# Last Modified: 2026-05-21                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -32,7 +32,7 @@
 #' confidence intervals.
 #'
 #' @export
-crc_row_level_estimator <- function(data, opts) {
+row_level_estimation <- function(data, opts) {
     if (!inherits(opts, "EstimatorOptions")) {
         stop(paste(
             "Invalid EstimatorOptions object provided.",

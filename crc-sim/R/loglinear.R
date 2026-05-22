@@ -4,7 +4,7 @@
 # Created Date: 2026-05-14                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-14                                                    #
+# Last Modified: 2026-05-21                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -27,7 +27,6 @@
 #' @importFrom MASS glm.nb
 #' @keywords internal
 #' @export
-
 fit_loglinear_model <- function(
     data,
     formula_object,

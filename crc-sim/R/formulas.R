@@ -4,19 +4,19 @@
 # Created Date: 2026-05-05                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-15                                                    #
+# Last Modified: 2026-05-21                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
 ################################################################################
 
-#' Formula Objects
-#' Generic test of an object being interpretable as a formula
+#' Is Formula
+#' @description Generic test of an object being interpretable as a formula
 #'
 #' @param x object to be tested
+#' @return TRUE if object inherits from class "formula", FALSE otherwise
 #'
 #' @export
-
 is_formula <- function(x) {
     return(inherits(x, "formula"))
 }

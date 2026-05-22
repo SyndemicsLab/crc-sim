@@ -1,10 +1,10 @@
 ################################################################################
-# File: crc_aic.R                                                              #
+# File: aic_selection.R                                                        #
 # Project: crc-sim                                                             #
 # Created Date: 2026-05-14                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-15                                                    #
+# Last Modified: 2026-05-21                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -29,7 +29,7 @@
 #'
 #' @keywords internal
 #' @export
-crc_aic <- function(data, opts) {
+aic_selection <- function(data, opts) {
     if (!inherits(opts, "AICOptions")) {
         stop("Invalid AICOptions object provided.")
     }
@@ -54,10 +54,11 @@ crc_aic <- function(data, opts) {
 }
 
 #' Evaluate a single possible formula based on AIC. This function is an
-#' internal function called specifically by \code{run_crc_aic} to evaluate each
-#' formula in the provided list of formulas. It fits the specified model for
-#' the given formula and returns a dataframe with the formula, estimate, AIC
-#' value, confidence interval, and any error messages for the formula.
+#' internal function called specifically by \code{run_aic_selection} to
+#' evaluate each formula in the provided list of formulas. It fits the
+#' specified model for the given formula and returns a dataframe with the
+#' formula, estimate, AIC value, confidence interval, and any error messages
+#' for the formula.
 #'
 #' @param formula_object a formula object specifying the log-linear model to fit
 #' @param data a data frame containing the observed capture histories and a

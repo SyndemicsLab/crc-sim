@@ -17,9 +17,6 @@ includes additional parameters specific to the stepwise method.
     \item{\code{direction}}{Character scalar specifying the stepwise search
 direction.}
 
-    \item{\code{capture_indicators}}{Character vector naming the capture history
-indicator columns.}
-
     \item{\code{interaction_limit}}{Integer scalar giving the maximum order of
 interactions to include in the search.}
   }
@@ -47,10 +44,10 @@ interactions to include in the search.}
     \if{html}{\out{<div class="r">}}
     \preformatted{StepwiseOptions$new(
   model,
+  capture_columns,
   threshold,
   direction,
   frequency_col_name = "N_ID",
-  capture_indicators = NULL,
   interaction_limit = 2
 )}
     \if{html}{\out{</div>}}
@@ -59,18 +56,20 @@ interactions to include in the search.}
     \if{html}{\out{<div class="arguments">}}
     \describe{
       \item{\code{model}}{Character scalar identifying the model family.}
+      \item{\code{capture_columns}}{Character vector naming the binary capture
+indicator columns.}
       \item{\code{threshold}}{Numeric scalar giving the stepwise inclusion
 threshold.}
       \item{\code{direction}}{Character scalar specifying the stepwise search
 direction.}
       \item{\code{frequency_col_name}}{Character scalar naming the frequency
 column in the aggregated CRC data.}
-      \item{\code{capture_indicators}}{Character vector naming the capture history
-indicator columns.}
       \item{\code{interaction_limit}}{Integer scalar giving the maximum order of
 interactions to include in the search.}
       \item{\code{frequency_column}}{Character scalar naming the frequency column
 in the aggregated CRC data.}
+      \item{\code{capture_indicators}}{Character vector naming the capture history
+indicator columns.}
     }
     \if{html}{\out{</div>}}
   }

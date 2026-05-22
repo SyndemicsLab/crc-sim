@@ -15,8 +15,8 @@ test_that("AICOptions returns the provided formula when formula is present", {
 
     opts <- AICOptions$new(
         model = "poisson",
+        capture_columns = c("capture_1", "capture_2"),
         frequency_col_name = "N_ID",
-        capture_indicators = c("capture_1", "capture_2"),
         formula = supplied_formula
     )
 
@@ -29,7 +29,7 @@ test_that("AICOptions creates formulas when formula is absent", {
     opts <- AICOptions$new(
         model = "poisson",
         frequency_col_name = "N_ID",
-        capture_indicators = c("capture_1", "capture_2")
+        capture_columns = c("capture_1", "capture_2")
     )
 
     expect_equal(opts$formulas, expected_formulas)
@@ -45,7 +45,7 @@ test_that(
             AICOptions$new(model = "poisson"),
             paste(
                 "If formula is not provided, frequency_col_name and",
-                "binary_variables must be specified."
+                "capture_columns must be specified."
             )
         )
     }
@@ -58,7 +58,7 @@ test_that("AICOptions prioritizes formula over generated formulas", {
     opts <- AICOptions$new(
         model = "poisson",
         frequency_col_name = "N_ID",
-        capture_indicators = c("capture_1", "capture_2"),
+        capture_columns = c("capture_1", "capture_2"),
         formula = supplied_formula
     )
 
@@ -73,9 +73,14 @@ test_that(
         "exactly as provided"
     ),
     {
-        opts <- Options$new(model = "poisson", threshold = 0.05)
+        opts <- Options$new(
+            model = "poisson",
+            capture_columns = c("capture_1", "capture_2"),
+            threshold = 0.05
+        )
 
         expect_equal(opts$model, "poisson")
+        expect_equal(opts$capture_columns, c("capture_1", "capture_2"))
         expect_equal(opts$threshold, 0.05)
     }
 )
@@ -89,6 +94,7 @@ test_that(
     {
         opts <- FrequencyOptions$new(
             model = "poisson",
+            capture_columns = c("capture_1", "capture_2"),
             threshold = 0.05,
             formulas = NULL,
             frequency_col_name = "N_ID"
@@ -126,7 +132,7 @@ test_that(
             threshold = 0.05,
             direction = "both",
             frequency_col_name = "N_ID",
-            capture_indicators = c("cap_1", "cap_2"),
+            capture_columns = c("cap_1", "cap_2"),
             interaction_limit = 3
         )
 
@@ -137,7 +143,7 @@ test_that(
         # Check StepwiseOptions-specific fields
         expect_equal(opts$direction, "both")
         expect_equal(opts$frequency_col_name, "N_ID")
-        expect_equal(opts$capture_indicators, c("cap_1", "cap_2"))
+        expect_equal(opts$capture_columns, c("cap_1", "cap_2"))
         expect_equal(opts$interaction_limit, 3)
     }
 )
@@ -151,6 +157,7 @@ test_that(
     {
         opts <- EstimatorOptions$new(
             model = "logit",
+            capture_columns = c("list_A", "list_B"),
             threshold = 0.10,
             list_pair = c("list_A", "list_B"),
             nfolds = 5,
@@ -177,7 +184,7 @@ test_that(
             threshold = 0.05,
             direction = "forward",
             frequency_col_name = "N_ID",
-            capture_indicators = c("cap_1", "cap_2")
+            capture_columns = c("cap_1", "cap_2")
         )
 
         expect_s3_class(opts, "StepwiseOptions")
@@ -192,7 +199,7 @@ test_that(
         opts <- AICOptions$new(
             model = "poisson",
             frequency_col_name = "N_ID",
-            capture_indicators = c("cap_1", "cap_2")
+            capture_columns = c("cap_1", "cap_2")
         )
 
         expect_s3_class(opts, "AICOptions")
@@ -206,6 +213,7 @@ test_that(
     {
         opts <- EstimatorOptions$new(
             model = "logit",
+            capture_columns = c("list_A", "list_B"),
             threshold = 0.10,
             list_pair = c("list_A", "list_B"),
             nfolds = 5,
@@ -221,8 +229,16 @@ test_that(
 test_that(
     paste("Options initialize method returns the same instance", "(self)"),
     {
-        opts <- Options$new(model = "poisson", threshold = 0.05)
-        result <- opts$initialize(model = "negbin", threshold = 0.10)
+        opts <- Options$new(
+            model = "poisson",
+            capture_columns = c("capture_1", "capture_2"),
+            threshold = 0.05
+        )
+        result <- opts$initialize(
+            model = "negbin",
+            c("capture_3", "capture_4"),
+            threshold = 0.10
+        )
 
         expect_identical(result, opts)
         expect_equal(opts$model, "negbin")
@@ -238,12 +254,14 @@ test_that(
     {
         opts <- FrequencyOptions$new(
             model = "poisson",
+            capture_columns = c("capture_1", "capture_2"),
             threshold = 0.05,
             formulas = NULL,
             frequency_col_name = "N_ID"
         )
         init_result <- opts$initialize(
             model = "poisson",
+            capture_columns = c("capture_1", "capture_2"),
             threshold = 0.05,
             formulas = NULL,
             frequency_col_name = "N_ID"
@@ -268,14 +286,14 @@ test_that(
             threshold = 0.05,
             direction = "forward",
             frequency_col_name = "N_ID",
-            capture_indicators = c("cap_1", "cap_2")
+            capture_columns = c("cap_1", "cap_2")
         )
         result <- opts$initialize(
             model = "negbin",
             threshold = 0.10,
             direction = "backward",
             frequency_col_name = "count",
-            capture_indicators = c("c1", "c2")
+            capture_columns = c("c1", "c2")
         )
 
         expect_identical(result, opts)
@@ -290,6 +308,7 @@ test_that(
     {
         opts <- EstimatorOptions$new(
             model = "logit",
+            capture_columns = c("list_A", "list_B"),
             threshold = 0.10,
             list_pair = c("list_A", "list_B"),
             nfolds = 5,
@@ -297,6 +316,7 @@ test_that(
         )
         result <- opts$initialize(
             model = "gam",
+            capture_columns = c("L1", "L2"),
             threshold = 0.15,
             list_pair = c("L1", "L2"),
             nfolds = 10,

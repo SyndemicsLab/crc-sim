@@ -4,7 +4,7 @@
 # Created Date: 2026-05-20                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-20                                                    #
+# Last Modified: 2026-05-21                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -54,11 +54,11 @@ crossfit_fold <- function(data, nfolds) {
 }
 
 
-build_list_pairs <- function(capture_indicators) {
-    if (length(capture_indicators) < 2) {
+build_list_pairs <- function(capture_columns) {
+    if (length(capture_columns) < 2) {
         return(list())
     }
-    combinations <- utils::combn(capture_indicators, 2, simplify = FALSE)
+    combinations <- utils::combn(capture_columns, 2, simplify = FALSE)
     str_list <- unlist(lapply(combinations, paste, collapse = ","))
     return(list(combos = combinations, string_names = str_list))
 }

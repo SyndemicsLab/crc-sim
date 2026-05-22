@@ -38,13 +38,21 @@ column.}
   Create a new \\code{FrequencyOptions} instance.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
-    \preformatted{FrequencyOptions$new(model, threshold, formulas, frequency_col_name)}
+    \preformatted{FrequencyOptions$new(
+  model,
+  capture_columns,
+  threshold,
+  formulas,
+  frequency_col_name
+)}
     \if{html}{\out{</div>}}
   }
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
       \item{\code{model}}{Character scalar identifying the model family.}
+      \item{\code{capture_columns}}{Character vector naming the binary capture
+indicator columns.}
       \item{\code{threshold}}{Numeric scalar giving the threshold applied by
 threshold-based selection methods.}
       \item{\code{formulas}}{Optional formula object or list of formulas used to

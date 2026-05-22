@@ -16,6 +16,9 @@ selection approaches.
     \item{\code{model}}{Character scalar identifying either the log-linear
 model or the nuisance function to utilize.}
 
+    \item{\code{capture_columns}}{Character vector naming the binary capture
+indicator columns.}
+
     \item{\code{threshold}}{Numeric scalar giving the threshold applied by
 threshold-based selection methods or the margin desired by stepwise
 selection.}
@@ -36,7 +39,7 @@ selection.}
   Create a new \\code{Options} instance.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
-    \preformatted{Options$new(model, threshold)}
+    \preformatted{Options$new(model, capture_columns, threshold)}
     \if{html}{\out{</div>}}
   }
   \subsection{Arguments}{
@@ -44,6 +47,8 @@ selection.}
     \describe{
       \item{\code{model}}{Character scalar identifying either the log-linear
 model or the nuisance function to utilize.}
+      \item{\code{capture_columns}}{Character vector naming the binary capture
+indicator columns.}
       \item{\code{threshold}}{Numeric scalar giving the threshold applied by
 threshold-based selection methods or the margin desired by stepwise
 selection.}

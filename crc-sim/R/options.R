@@ -221,7 +221,7 @@ AICOptions <- R6::R6Class( # nolint: object_name_linter
         #' @return The initialized \\code{AICOptions} object.
         initialize = function(
             model,
-            capture_columns,
+            capture_columns = NULL,
             formula = NULL,
             frequency_col_name = "N_ID"
         ) {

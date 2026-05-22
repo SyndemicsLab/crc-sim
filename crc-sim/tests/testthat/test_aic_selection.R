@@ -1,10 +1,10 @@
 ################################################################################
-# File: test_crc_aic.R                                                         #
+# File: test_aic_selection.R                                                   #
 # Project: crc-sim                                                             #
 # Created Date: 2026-05-15                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-15                                                    #
+# Last Modified: 2026-05-21                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -30,24 +30,24 @@ make_aic_options <- function(formulas = NULL, model = "poisson") {
 
     opts <- AICOptions$new(
         model = model,
+        capture_columns = c("capture_1", "capture_2", "capture_3"),
         formula = formulas,
-        frequency_col_name = "N_ID",
-        capture_indicators = c("capture_1", "capture_2", "capture_3")
+        frequency_col_name = "N_ID"
     )
 
     return(opts)
 }
 
-test_that("crc_aic errors when opts is not an AICOptions object", {
+test_that("aic_selection errors when opts is not an AICOptions object", {
     data <- make_aic_fixture()
 
     expect_error(
-        crc_aic(data, list()),
+        aic_selection(data, list()),
         "Invalid AICOptions object provided"
     )
 })
 
-test_that("crc_aic errors when data is not a frequency table", {
+test_that("aic_selection errors when data is not a frequency table", {
     set.seed(456)
     raw_data <- create_data(
         n_individuals = 100,
@@ -58,18 +58,18 @@ test_that("crc_aic errors when data is not a frequency table", {
     opts <- make_aic_options()
 
     expect_error(
-        crc_aic(raw_data, opts),
+        aic_selection(raw_data, opts),
         "Data must be a frequency table"
     )
 })
 
-test_that("crc_aic errors when frequency column exists but is not numeric", {
+test_that("aic_selection errors when frequency column exists but is not numeric", {
     data <- make_aic_fixture()
     data$N_ID <- as.character(data$N_ID)
     opts <- make_aic_options()
 
     expect_error(
-        crc_aic(data, opts),
+        aic_selection(data, opts),
         "Data must be a frequency table"
     )
 })
@@ -165,7 +165,7 @@ test_that("evaluate_formula_with_aic rejects unsupported model family", {
 
 test_that(
     paste(
-        "crc_aic returns one row per formula with required columns",
+        "aic_selection returns one row per formula with required columns",
         "and expected field types"
     ),
     {
@@ -176,7 +176,7 @@ test_that(
         )
         opts <- make_aic_options(formulas = formulas)
 
-        out <- crc_aic(data, opts)
+        out <- aic_selection(data, opts)
 
         expect_s3_class(out, "data.frame")
         expect_equal(nrow(out), length(formulas))
@@ -195,7 +195,7 @@ test_that(
     }
 )
 
-test_that("crc_aic handles mixed success and error formulas", {
+test_that("aic_selection handles mixed success and error formulas", {
     data <- make_aic_fixture()
     formulas <- list(
         stats::as.formula("N_ID ~ capture_1 + capture_2"),
@@ -203,14 +203,14 @@ test_that("crc_aic handles mixed success and error formulas", {
     )
     opts <- make_aic_options(formulas = formulas)
 
-    out <- crc_aic(data, opts)
+    out <- aic_selection(data, opts)
 
     expect_equal(nrow(out), 2)
     expect_true(anyNA(out$error))
     expect_false(all(is.na(out$error)))
 })
 
-test_that("crc_aic output is sorted by ascending AIC for successful rows", {
+test_that("aic_selection output is sorted by ascending AIC for successful rows", {
     data <- make_aic_fixture()
     formulas <- list(
         stats::as.formula("N_ID ~ capture_1 + capture_2"),
@@ -219,7 +219,7 @@ test_that("crc_aic output is sorted by ascending AIC for successful rows", {
     )
     opts <- make_aic_options(formulas = formulas)
 
-    out <- crc_aic(data, opts)
+    out <- aic_selection(data, opts)
 
     ok <- out[!is.na(out$AIC), , drop = FALSE]
     if (nrow(ok) > 1) {
@@ -229,24 +229,24 @@ test_that("crc_aic output is sorted by ascending AIC for successful rows", {
     }
 })
 
-test_that("crc_aic result contains formula strings from provided formulas", {
+test_that("aic_selection result contains formula strings from provided formulas", {
     data <- make_aic_fixture()
     formula_1 <- stats::as.formula("N_ID ~ capture_1 + capture_2")
     formula_2 <- stats::as.formula("N_ID ~ capture_1 * capture_2")
     opts <- make_aic_options(formulas = list(formula_1, formula_2))
 
-    out <- crc_aic(data, opts)
+    out <- aic_selection(data, opts)
 
     expect_true(any(grepl("capture_1", out$formula, fixed = TRUE)))
     expect_true(any(grepl("capture_2", out$formula, fixed = TRUE)))
 })
 
-test_that("crc_aic preserves error text in output rows", {
+test_that("aic_selection preserves error text in output rows", {
     data <- make_aic_fixture()
     formulas <- list(stats::as.formula("N_ID ~ not_a_real_column"))
     opts <- make_aic_options(formulas = formulas)
 
-    out <- crc_aic(data, opts)
+    out <- aic_selection(data, opts)
 
     expect_equal(nrow(out), 1)
     expect_true(is.na(out$estimate))

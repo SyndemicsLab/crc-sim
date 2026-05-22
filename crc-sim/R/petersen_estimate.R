@@ -4,7 +4,7 @@
 # Created Date: 2026-05-18                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-20                                                    #
+# Last Modified: 2026-05-21                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -76,6 +76,7 @@ petersen_pair_estimate <- function(
 #' @param data A data frame containing binary capture indicators as columns.
 #' @return A list of Petersen estimates and standard errors for each pair of
 #' capture indicators.
+#'
 #' @importFrom utils combn
 #' @export
 petersen_estimate <- function(data) {

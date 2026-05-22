@@ -30,14 +30,14 @@
 crc <- function(data, opts) {
     if (inherits(opts, "FrequencyOptions")) {
         if (inherits(opts, "AICOptions")) {
-            return(crc_aic(data, opts))
+            return(aic_selection(data, opts))
         } else if (inherits(opts, "StepwiseOptions")) {
-            return(crc_stepwise(data, opts))
+            return(stepwise_selection(data, opts))
         } else {
             stop("Invalid FrequencyOptions object provided.")
         }
     } else if (inherits(opts, "EstimatorOptions")) {
-        return(crc_row_level_estimator(data, opts))
+        return(row_level_estimation(data, opts))
     }
     stop("Invalid options object provided.")
 }

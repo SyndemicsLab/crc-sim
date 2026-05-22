@@ -41,9 +41,9 @@ the AIC-based selection routine.}
     \if{html}{\out{<div class="r">}}
     \preformatted{AICOptions$new(
   model,
+  capture_columns = NULL,
   formula = NULL,
-  frequency_col_name = "N_ID",
-  capture_indicators = NULL
+  frequency_col_name = "N_ID"
 )}
     \if{html}{\out{</div>}}
   }
@@ -51,6 +51,8 @@ the AIC-based selection routine.}
     \if{html}{\out{<div class="arguments">}}
     \describe{
       \item{\code{model}}{Character scalar identifying the model family.}
+      \item{\code{capture_columns}}{Character vector naming the binary capture
+indicator columns.}
       \item{\code{formula}}{Optional formula object to evaluate directly.}
       \item{\code{frequency_col_name}}{Character scalar naming the frequency
 column

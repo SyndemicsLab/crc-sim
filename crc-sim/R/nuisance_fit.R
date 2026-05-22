@@ -4,7 +4,7 @@
 # Created Date: 2026-05-20                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-21                                                    #
+# Last Modified: 2026-05-22                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -22,7 +22,7 @@
 #'
 #' @keywords internal
 #' @export
-empirical_means <- function(train, test, j, k) {
+empirical_qhats <- function(train, test, j, k) {
     q_j <- mean(train[[j]])
     q_k <- mean(train[[k]])
     q_jk <- mean(train[[j]] * train[[k]])
@@ -97,14 +97,29 @@ fit_random_forest <- function(data, formula) {
 #'
 #' @param model Fitted model.
 #' @param data Data frame.
-#' @param n Number of capture columns. We must remove the capture columns for
-#' the prediction and only include the covariates in the newdata.
 #' @returns Predicted probabilities from the specified model.
 #'
 #' @importFrom stats predict
 #' @keywords internal
-predict_qhat <- function(model, data) {
+predict_stats_model_qhat <- function(model, data) {
     return(stats::predict(model, newdata = data, type = "response"))
+}
+
+#' Predict capture probabilities from a fitted ranger model.
+#' This is a helper function for random_forest_qhats to avoid code repetition.
+#' Annoyingly, ranger expects a `data` argument rather than `newdata`, and the
+#' predict function for ranger models returns a list with "predictions" element
+#' that contains the predicted probabilities, so we need a separate function to
+#' extract those probabilities.
+#'
+#' @param model Fitted ranger model.
+#' @param data Data frame.
+#' @returns Predicted probabilities from the specified ranger model.
+#'
+#' @importFrom stats predict
+#' @keywords internal
+predict_ranger_model_qhat <- function(model, data) {
+    return(stats::predict(model, data)$predictions[, "1"])
 }
 
 #' Logistic regression nuisance function for capture-recapture
@@ -136,7 +151,7 @@ glm_qhats <- function(
 ) {
     # no covariates
     if (ncol(train) <= n_capture_cols) {
-        return(empirical_means(train, test, j, k))
+        return(empirical_qhats(train, test, j, k))
     }
 
     # Fit logit models for each list
@@ -153,15 +168,15 @@ glm_qhats <- function(
     ]
 
     q_j <- fit_glm(training_data, j_form) |>
-        predict_qhat(test) |>
+        predict_stats_model_qhat(test) |>
         pmax(margin)
 
     q_k <- fit_glm(training_data, k_form) |>
-        predict_qhat(test) |>
+        predict_stats_model_qhat(test) |>
         pmax(margin)
 
     q_jk <- fit_glm(training_data, jk_form) |>
-        predict_qhat(test) |>
+        predict_stats_model_qhat(test) |>
         pmax(margin)
 
     return(list(
@@ -193,7 +208,7 @@ glm_qhats <- function(
 #' @export
 gam_qhats <- function(train, test, n_capture_cols, j, k, margin = 0.005, ...) {
     if (ncol(train) <= n_capture_cols) {
-        return(empirical_means(train, test, j, k))
+        return(empirical_qhats(train, test, j, k))
     }
 
     # Fit logit models for each list
@@ -221,13 +236,13 @@ gam_qhats <- function(train, test, n_capture_cols, j, k, margin = 0.005, ...) {
 
     # Fit GAM models for each list
     q_j <- fit_gam(train, j_form) |>
-        predict_qhat(test) |>
+        predict_stats_model_qhat(test) |>
         pmax(margin)
     q_k <- fit_gam(train, k_form) |>
-        predict_qhat(test) |>
+        predict_stats_model_qhat(test) |>
         pmax(margin)
     q_jk <- fit_gam(train, jk_form) |>
-        predict_qhat(test) |>
+        predict_stats_model_qhat(test) |>
         pmax(margin)
 
     return(list(
@@ -268,7 +283,7 @@ random_forest_qhats <- function(
     ...
 ) {
     if (ncol(train) <= n_capture_cols) {
-        return(empirical_means(train, test, j, k))
+        return(empirical_qhats(train, test, j, k))
     }
 
     # Fit logit models for each list
@@ -290,15 +305,15 @@ random_forest_qhats <- function(
     k_data <- train[, -cc[-k]]
     jk_data <- train[, -cc[-c(j, k)]]
 
-    pred_j <- fit_random_forest(j_data, j_form) |>
-        predict_qhat(test)
-    pred_k <- fit_random_forest(k_data, k_form) |>
-        predict_qhat(test)
-    pred_jk <- fit_random_forest(jk_data, jk_form) |>
-        predict_qhat(test)
-    q_j <- pmax(pred_j$predictions[, "1"], margin)
-    q_k <- pmax(pred_k$predictions[, "1"], margin)
-    q_jk <- pmax(pred_jk$predictions[, "1"], margin)
+    q_j <- fit_random_forest(j_data, j_form) |>
+        predict_ranger_model_qhat(test) |>
+        pmax(margin)
+    q_k <- fit_random_forest(k_data, k_form) |>
+        predict_ranger_model_qhat(test) |>
+        pmax(margin)
+    q_jk <- fit_random_forest(jk_data, jk_form) |>
+        predict_ranger_model_qhat(test) |>
+        pmax(margin)
 
     return(list(
         q_j = q_j,
