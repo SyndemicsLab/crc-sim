@@ -4,7 +4,7 @@
 # Created Date: 2026-05-15                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-21                                                    #
+# Last Modified: 2026-05-26                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -65,7 +65,7 @@ row_level_estimation <- function(data, opts) {
             capture_names = capture_columns,
             nuisance_function = opts[["model"]]
         ) |>
-            capture_probability_estimate(opts[["estimator"]])
+            estimate_capture_probability(opts[["estimator"]])
         return(capture_prob)
     })
 

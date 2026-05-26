@@ -4,11 +4,59 @@
 # Created Date: 2026-02-17                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-21                                                    #
+# Last Modified: 2026-05-26                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
 ################################################################################
+
+#' Is Probability Vector
+#' @description A function used to check if a vector is a valid probability
+#' vector (i.e., numeric and all values between 0 and 1). This is used in the
+#' validation of capture and category probabilities for data generation.
+#' @param vec a vector to check
+#' @returns a boolean indicating whether the vector is a valid probability
+#' vector
+#'
+#' @keywords internal
+#' @export
+is_probability_vector <- function(vec) {
+    if (!is.vector(vec)) {
+        return(FALSE)
+    }
+    if (!is.numeric(vec)) {
+        warning("Input vector must be numeric.")
+        return(FALSE)
+    }
+    if (any(vec < 0 | vec > 1)) {
+        warning("All values in the input vector must be between 0 and 1.")
+        return(FALSE)
+    }
+    return(TRUE)
+}
+
+#' Is Probability Scalar
+#' @description A function used to check if a value is a valid probability
+#' scalar (i.e., numeric, length 1, and between 0 and 1). This is used in the
+#' validation of capture and category probabilities for data generation when
+#' the user specifies a single probability to be applied across all captures or
+#' categories.
+#' @param value a value to check
+#' @returns a boolean indicating whether the value is a valid probability scalar
+#'
+#' @keywords internal
+#' @export
+is_probability_scalar <- function(value) {
+    if (!is.numeric(value) || length(value) != 1) {
+        warning("Input must be a numeric scalar.")
+        return(FALSE)
+    }
+    if (value < 0 || value > 1) {
+        warning("Input value must be between 0 and 1.")
+        return(FALSE)
+    }
+    return(TRUE)
+}
 
 #' Data generation tool. This creates a simulated dataset for testing various
 #' Capture-Recapture models. The user is able to specify the number of

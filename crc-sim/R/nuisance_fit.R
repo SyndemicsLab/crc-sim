@@ -23,6 +23,14 @@
 #' @keywords internal
 #' @export
 empirical_qhats <- function(train, test, j, k) {
+    if (ncol(train) <= max(j, k)) {
+        stop(
+            paste0(
+                "j and k indices must be less than or equal to the number of",
+                "columns in train"
+            )
+        )
+    }
     q_j <- mean(train[[j]])
     q_k <- mean(train[[k]])
     q_jk <- mean(train[[j]] * train[[k]])

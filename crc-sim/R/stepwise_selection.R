@@ -4,7 +4,7 @@
 # Created Date: 2026-05-14                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-21                                                    #
+# Last Modified: 2026-05-26                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -63,6 +63,7 @@ stepwise_selection <- function(data, opts, verbose = FALSE) {
 #' @importFrom MASS glm.nb
 #' @importFrom utils capture.output
 #' @importFrom stats AIC coef confint formula glm poisson step
+#' @importFrom purrr quietly
 #'
 #' @keywords internal
 #' @noRd
@@ -89,26 +90,18 @@ step_regression <- function(
     ))
 
     model <- fit_loglinear_model(data, formula_init, model_family)
+    step_result <- purrr::quietly(step)(
+        model,
+        scope = list(upper = formula_max, lower = formula_init),
+        direction = direction,
+        k = log(nrow(data))
+    )
+    final_model <- step_result[["result"]]
 
     if (verbose) {
-        final_model <- step(
-            model,
-            scope = list(upper = formula_max, lower = formula_init),
-            direction = direction,
-            k = log(nrow(data))
-        )
-    } else {
-        suppressMessages(
-            capture.output(
-                final_model <- step(
-                    model,
-                    scope = list(upper = formula_max, lower = formula_init),
-                    direction = direction,
-                    k = log(nrow(data))
-                ),
-                file = NULL
-            )
-        )
+        print(step_result[["output"]])
+        print(step_result[["warnings"]])
+        print(step_result[["messages"]])
     }
 
     intercept <- coef(final_model)[1]
