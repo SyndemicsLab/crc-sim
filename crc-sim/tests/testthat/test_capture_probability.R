@@ -4,7 +4,7 @@
 # Created Date: 2026-05-22                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-26                                                    #
+# Last Modified: 2026-05-27                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -46,4 +46,40 @@ test_that("vectorized plugin_estimation returns correct psi_hat", {
     expected_psi_hat <- 1 / mean(1 / gamma_hat)
     psi_hat <- get_plugin_estimation(q_j, q_k, q_jk)
     expect_equal(psi_hat, expected_psi_hat)
+})
+
+test_that("scalar double_robust_estimation returns the correct psi_hat", {
+    q_j <- 0.5
+    q_k <- 0.4
+    q_jk <- 0.2
+    y_j <- 1
+    y_k <- 1
+    gamma_hat <- q_jk / (q_j * q_k)
+    expected_psi_hat <- 1 /
+        mean(gamma_hat^-1 * (y_j / q_j + y_k / q_k - (y_j * y_k) / q_jk))
+    psi_hat <- get_double_robust_estimation(q_j, q_k, q_jk, y_j, y_k)
+    expect_equal(psi_hat, expected_psi_hat)
+})
+
+test_that("vectorized double_robust_estimation returns the correct psi_hat", {
+    q_j <- c(0.5, 0.3, 0.6)
+    q_k <- c(0.4, 0.2, 0.5)
+    q_jk <- c(0.2, 0.1, 0.3)
+    y_j <- c(1, 0, 1)
+    y_k <- c(0, 1, 1)
+    gamma_hat <- q_jk / (q_j * q_k)
+    expected_psi_hat <- 1 /
+        mean(gamma_hat^-1 * (y_j / q_j + y_k / q_k - (y_j * y_k) / q_jk))
+    psi_hat <- get_double_robust_estimation(q_j, q_k, q_jk, y_j, y_k)
+    expect_equal(psi_hat, expected_psi_hat)
+})
+
+test_that("scalar tmle estimation returns the correct capture probability", {
+    q_j <- 0.5
+    q_k <- 0.4
+    q_jk <- 0.2
+    y_j <- 1
+    y_k <- 1
+    capture_prob <- get_tmle_estimation(q_j, q_k, q_jk, y_j, y_k)
+    expect_equal(capture_prob, expected_capture_prob)
 })
