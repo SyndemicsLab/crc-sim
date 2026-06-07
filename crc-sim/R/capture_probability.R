@@ -4,7 +4,7 @@
 # Created Date: 2026-05-18                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-27                                                    #
+# Last Modified: 2026-05-28                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -45,9 +45,9 @@ estimate_capture_probability <- function(
     estimator <- match.arg(estimator)
     return(switch(
         estimator,
-        plugin = get_plugin_estimation(q_j, q_k, q_jk),
-        double_robust = get_double_robust_estimation(q_j, q_k, q_jk, y_j, y_k),
-        tmle = get_tmle_estimation(q_j, q_k, q_jk, y_j, y_k),
+        PI = get_plugin_estimation(q_j, q_k, q_jk),
+        DR = get_double_robust_estimation(q_j, q_k, q_jk, y_j, y_k),
+        TMLE = get_tmle_estimation(q_j, q_k, q_jk, y_j, y_k),
         stop(paste(
             "Unsupported estimator specified: ",
             estimator,
