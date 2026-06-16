@@ -47,7 +47,6 @@ row_level_estimation <- function(data, opts) {
         ))
     }
 
-    # This is the basic outline of what we want to do rather than utilize drpop.
     if (is.null(opts[["capture_columns"]])) {
         capture_columns <- names(
             data[, vapply(data, is_column_binary, logical(1L))]
@@ -74,26 +73,4 @@ row_level_estimation <- function(data, opts) {
         idfold = qhat[["idfold"]]
     )
     return(psin_estimates)
-
-    # folds <- crossfit_fold(data, opts[["nfolds"]])
-
-    # cap_probs <- lapply(seq_len(opts[["nfolds"]]), function(fold) {
-    #     test_idx <- folds == fold
-    #     train_idx <- !test_idx
-    #     capture_prob <- qhat_generation(
-    #         train = data[train_idx, , drop = FALSE],
-    #         test = data[test_idx, , drop = FALSE],
-    #         capture_names = capture_columns,
-    #         nuisance_function = opts[["model"]]
-    #     ) |>
-    #         estimate_capture_probability(opts[["estimator"]])
-    #     return(capture_prob)
-    # })
-
-    # return(list(
-    #     estimate = get_n_estimate(capture_prob),
-    #     lower_ci = get_lower_ci(capture_prob),
-    #     upper_ci = get_upper_ci(capture_prob),
-    #     estimator = opts$estimator
-    # ))
 }
