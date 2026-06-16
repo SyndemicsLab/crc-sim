@@ -4,11 +4,11 @@
 \alias{stepwise_selection}
 \title{Run CRC with Stepwise Formula Selection.}
 \usage{
-stepwise_selection(data, opts, verbose = FALSE)
+stepwise_selection(model_data, opts, verbose = FALSE)
 }
 \arguments{
-\item{data}{a data frame containing the observed capture histories and a
-frequency column.}
+\item{model_data}{a data frame containing the observed capture histories and
+a frequency column.}
 
 \item{opts}{a \code{StepwiseOptions} object specifying the options for
 stepwise regression, including the model family, p-value threshold for

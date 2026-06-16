@@ -1,10 +1,10 @@
 ################################################################################
-# File: test_create.R                                                          #
+# File: test_data_control.R                                                    #
 # Project: crc-sim                                                             #
 # Created Date: 15 May 2026                                                    #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-15                                                    #
+# Last Modified: 2026-06-16                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -30,44 +30,6 @@ test_that("create_data capture columns contain only binary values", {
     expect_true(all(capture_values %in% c(0L, 1L)))
 })
 
-test_that("create_data category columns are one-hot encoded per row", {
-    result <- create_data(
-        n_individuals = 100,
-        n_captures = 2,
-        n_categories = 4
-    )
-
-    category_cols <- grep("^category_", names(result), value = TRUE)
-    row_sums <- rowSums(result[, category_cols])
-
-    expect_true(all(row_sums == 1L))
-    expect_true(all(unlist(result[, category_cols]) %in% c(0L, 1L)))
-})
-
-test_that(
-    paste(
-        "create_data column names match expected capture and",
-        "category pattern"
-    ),
-    {
-        result <- create_data(
-            n_individuals = 10,
-            n_captures = 3,
-            n_categories = 2
-        )
-
-        expected_names <- c(
-            "capture_1",
-            "capture_2",
-            "capture_3",
-            "category_1",
-            "category_2"
-        )
-
-        expect_named(result, expected_names)
-    }
-)
-
 test_that(
     paste(
         "create_data does not include N_ID when return",
@@ -83,19 +45,6 @@ test_that(
         expect_false("N_ID" %in% names(result))
     }
 )
-
-test_that("create_data accepts custom p_captures without error", {
-    result <- create_data(
-        n_individuals = 50,
-        n_captures = 3,
-        p_captures = c(0.2, 0.5, 0.8)
-    )
-
-    capture_cols <- grep("^capture_", names(result), value = TRUE)
-
-    expect_length(capture_cols, 3)
-    expect_true(all(unlist(result[, capture_cols]) %in% c(0L, 1L)))
-})
 
 # ==============================================================================
 # Group 2: create_data() - Aggregated dataset
@@ -148,59 +97,30 @@ test_that("create_data frequency table has fewer rows than n_individuals", {
     expect_lt(nrow(result), 500)
 })
 
-test_that(
-    paste(
-        "create_data frequency table capture and category",
-        "columns remain valid"
-    ),
-    {
-        result <- create_data(
-            n_individuals = 200,
-            n_captures = 3,
-            n_categories = 2,
-            return_frequency_table = TRUE
-        )
-
-        capture_cols <- grep("^capture_", names(result), value = TRUE)
-        category_cols <- grep("^category_", names(result), value = TRUE)
-
-        expect_true(all(unlist(result[, capture_cols]) %in% c(0L, 1L)))
-        expect_true(all(unlist(result[, category_cols]) %in% c(0L, 1L)))
-        expect_length(capture_cols, 3)
-        expect_length(category_cols, 2)
-    }
-)
-
 # ==============================================================================
 # Group 3: build_individual_records()
 # ==============================================================================
 
-test_that("build_individual_records returns a tibble with n_individuals rows", {
+test_that("build_individual_records returns correct tibble", {
+    covariate_specs <- data.frame(
+        distribution = "uniform",
+        p1 = 0,
+        p2 = 1,
+        dtype = "integer"
+    )
     result <- build_individual_records(
         n_individuals = 75,
         capture_probs = c(0.5, 0.5),
-        category_probs = 1
+        covariate_specs = covariate_specs
+    )
+    expected_names <- c(
+        "capture_1",
+        "capture_2",
+        "covariate_1"
     )
 
     expect_s3_class(result, "tbl_df")
     expect_equal(nrow(result), 75)
-})
-
-test_that("build_individual_records produces correct column structure", {
-    result <- build_individual_records(
-        n_individuals = 10,
-        capture_probs = c(0.4, 0.6, 0.3),
-        category_probs = c(0.5, 0.5)
-    )
-
-    expected_names <- c(
-        "capture_1",
-        "capture_2",
-        "capture_3",
-        "category_1",
-        "category_2"
-    )
-
     expect_named(result, expected_names)
 })
 
@@ -302,41 +222,6 @@ test_that("validate_create_args errors on non-integer n_captures", {
     )
 })
 
-test_that("validate_create_args errors on non-numeric n_categories", {
-    expect_error(
-        crcsim:::validate_create_args(10, 2, "1", FALSE),
-        "n_categories must be a numeric scalar"
-    )
-})
-
-test_that("validate_create_args errors on non-scalar n_categories", {
-    expect_error(
-        crcsim:::validate_create_args(10, 2, c(1, 2), FALSE),
-        "n_categories must be a numeric scalar"
-    )
-})
-
-test_that("validate_create_args errors on n_categories less than 1", {
-    expect_error(
-        crcsim:::validate_create_args(10, 2, 0, FALSE),
-        "n_categories must be a positive integer"
-    )
-})
-
-test_that("validate_create_args errors on non-integer n_categories", {
-    expect_error(
-        crcsim:::validate_create_args(10, 2, 1.5, FALSE),
-        "n_categories must be a positive integer"
-    )
-})
-
-test_that("validate_create_args errors on non-logical return_frequency_table", {
-    expect_error(
-        crcsim:::validate_create_args(10, 2, 1, "FALSE"),
-        "return_frequency_table must be a logical scalar"
-    )
-})
-
 # ==============================================================================
 # Group 6: normalize_p_captures() - internal validation
 # ==============================================================================
@@ -372,65 +257,5 @@ test_that("normalize_p_captures returns valid input as numeric vector", {
     result <- crcsim:::normalize_p_captures(3, c(0.2, 0.5, 0.8))
 
     expect_equal(result, c(0.2, 0.5, 0.8))
-    expect_type(result, "double")
-})
-
-# ==============================================================================
-# Group 7: normalize_p_categories() - internal validation
-# ==============================================================================
-
-test_that(
-    paste(
-        "normalize_p_categories returns default vector when",
-        "p_categories is NULL"
-    ),
-    {
-        result <- crcsim:::normalize_p_categories(
-            n_categories = 3,
-            p_categories = NULL
-        )
-
-        expect_equal(result, c(1, 0, 0))
-    }
-)
-
-test_that("normalize_p_categories errors on non-numeric input", {
-    expect_error(
-        crcsim:::normalize_p_categories(2, c("0.5", "0.5")),
-        "p_categories must be a numeric vector"
-    )
-})
-
-test_that(
-    paste(
-        "normalize_p_categories errors when length does not",
-        "match n_categories"
-    ),
-    {
-        expect_error(
-            crcsim:::normalize_p_categories(3, c(0.5, 0.5)),
-            "Length of p_categories must equal n_categories"
-        )
-    }
-)
-
-test_that("normalize_p_categories errors when any value is outside [0, 1]", {
-    expect_error(
-        crcsim:::normalize_p_categories(2, c(0.5, 1.5)),
-        "All p_categories values must be between 0 and 1"
-    )
-})
-
-test_that("normalize_p_categories errors when values do not sum to 1", {
-    expect_error(
-        crcsim:::normalize_p_categories(2, c(0.3, 0.3)),
-        "p_categories must sum to 1"
-    )
-})
-
-test_that("normalize_p_categories returns valid input as numeric vector", {
-    result <- crcsim:::normalize_p_categories(3, c(0.2, 0.5, 0.3))
-
-    expect_equal(result, c(0.2, 0.5, 0.3))
     expect_type(result, "double")
 })

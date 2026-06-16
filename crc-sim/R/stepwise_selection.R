@@ -4,7 +4,7 @@
 # Created Date: 2026-05-14                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-26                                                    #
+# Last Modified: 2026-06-16                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -16,27 +16,27 @@
 #' specified model using stepwise regression, and returns a list with the final
 #' formula, estimate, confidence interval, and AIC value for the selected model.
 #'
-#' @param data a data frame containing the observed capture histories and a
-#' frequency column.
+#' @param model_data a data frame containing the observed capture histories and
+#' a frequency column.
 #' @param opts a \code{StepwiseOptions} object specifying the options for
 #' stepwise regression, including the model family, p-value threshold for
 #' variable inclusion, and stepwise direction.
 #'
 #' @keywords internal
 #' @export
-stepwise_selection <- function(data, opts, verbose = FALSE) {
+stepwise_selection <- function(model_data, opts, verbose = FALSE) {
     if (!inherits(opts, "StepwiseOptions")) {
         stop("Invalid StepwiseOptions object provided.")
     }
 
-    if (!is_frequency_table(data, opts$frequency_col_name)) {
+    if (!is_frequency_table(model_data, opts$frequency_col_name)) {
         stop(paste(
             "Data must be a frequency table with a numeric frequency column",
             opts$frequency_col_name
         ))
     }
     output <- step_regression(
-        data,
+        model_data,
         opts$frequency_col_name,
         opts$capture_columns,
         p_threshold = opts$threshold,
@@ -51,7 +51,7 @@ stepwise_selection <- function(data, opts, verbose = FALSE) {
 
 
 #' Helper function for stepwise regression
-#' @param data dataframe
+#' @param model_data dataframe
 #' @param y string: LHS of formula object
 #' @param x string: RHS of formula object
 #' @param method string: either 'poisson' or 'negbin'
@@ -68,7 +68,7 @@ stepwise_selection <- function(data, opts, verbose = FALSE) {
 #' @keywords internal
 #' @noRd
 step_regression <- function(
-    data,
+    model_data,
     y,
     x,
     model_family = c("poisson", "negbin"),
@@ -88,25 +88,30 @@ step_regression <- function(
         ")^",
         k
     ))
+    model <- fit_loglinear_model(model_data, formula_init, model_family)
 
-    model <- fit_loglinear_model(data, formula_init, model_family)
-    step_result <- purrr::quietly(step)(
-        model,
-        scope = list(upper = formula_max, lower = formula_init),
-        direction = direction,
-        k = log(nrow(data))
+    # Step function is obnoxious, so we turn off the messages. This requires
+    # linter adjustment
+    # nolint start: implicit_assignment_linter
+    suppressMessages(
+        final_model <- step(
+            model,
+            scope = list(upper = formula_max, lower = formula_init),
+            direction = direction,
+            k = log(nrow(model_data))
+        )
     )
-    final_model <- step_result[["result"]]
-
-    if (verbose) {
-        print(step_result[["output"]])
-        print(step_result[["warnings"]])
-        print(step_result[["messages"]])
-    }
+    # nolint start: implicit_assignment_linter
 
     intercept <- coef(final_model)[1]
     estimate <- exp(intercept)
-    ci <- exp(confint(final_model)[1, ])
+
+    # confint forces messages to output which is obnoxious. We suppress them and
+    # turn off the linter for the implicit assignment in this block.
+
+    # nolint start: implicit_assignment_linter
+    suppressMessages(ci <- exp(confint(final_model)[1, ]))
+    # nolint end: implicit_assignment_linter
 
     results <- list(
         model = model_family,

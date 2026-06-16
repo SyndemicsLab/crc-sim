@@ -4,7 +4,7 @@
 # Created Date: 2026-05-14                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-21                                                    #
+# Last Modified: 2026-06-16                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -25,16 +25,16 @@
 #'
 #' @importFrom stats glm
 #' @importFrom MASS glm.nb
-#' @keywords internal
+#'
 #' @export
 fit_loglinear_model <- function(
-    data,
+    model_data,
     formula_object,
     model_family = c("poisson", "negbin")
 ) {
     model_family <- match.arg(model_family)
     if (model_family == "poisson") {
-        return(glm(formula_object, data = data, family = "poisson"))
+        return(glm(formula_object, data = model_data, family = "poisson"))
     }
-    return(glm.nb(formula = formula_object, data = data))
+    return(glm.nb(formula = formula_object, data = model_data))
 }

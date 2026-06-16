@@ -4,7 +4,7 @@
 # Created Date: 2026-05-15                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-15                                                    #
+# Last Modified: 2026-06-16                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -21,11 +21,11 @@ make_loglinear_fixture <- function(n_individuals = 300, n_captures = 3) {
 }
 
 test_that("fit_loglinear_model returns a glm object with poisson", {
-    data <- make_loglinear_fixture()
+    model_data <- make_loglinear_fixture()
     formula_obj <- stats::as.formula("N_ID ~ capture_1 + capture_2")
 
     model <- fit_loglinear_model(
-        data = data,
+        model_data = model_data,
         formula_object = formula_obj,
         model_family = "poisson"
     )
@@ -34,11 +34,11 @@ test_that("fit_loglinear_model returns a glm object with poisson", {
 })
 
 test_that("fit_loglinear_model returns a negbin object with negbin", {
-    data <- make_loglinear_fixture()
+    model_data <- make_loglinear_fixture()
     formula_obj <- stats::as.formula("N_ID ~ capture_1 + capture_2")
 
     model <- fit_loglinear_model(
-        data = data,
+        model_data = model_data,
         formula_object = formula_obj,
         model_family = "negbin"
     )
@@ -47,12 +47,12 @@ test_that("fit_loglinear_model returns a negbin object with negbin", {
 })
 
 test_that("fit_loglinear_model errors on invalid model_family", {
-    data <- make_loglinear_fixture()
+    model_data <- make_loglinear_fixture()
     formula_obj <- stats::as.formula("N_ID ~ capture_1 + capture_2")
 
     expect_error(
         fit_loglinear_model(
-            data = data,
+            model_data = model_data,
             formula_object = formula_obj,
             model_family = "invalid_family"
         ),
@@ -61,12 +61,12 @@ test_that("fit_loglinear_model errors on invalid model_family", {
 })
 
 test_that("fit_loglinear_model errors on invalid formula", {
-    data <- make_loglinear_fixture()
+    model_data <- make_loglinear_fixture()
     bad_formula <- stats::as.formula("N_ID ~ does_not_exist")
 
     expect_error(
         fit_loglinear_model(
-            data = data,
+            model_data = model_data,
             formula_object = bad_formula,
             model_family = "poisson"
         ),

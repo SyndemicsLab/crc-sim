@@ -4,7 +4,7 @@
 # Created Date: 2026-05-15                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-21                                                    #
+# Last Modified: 2026-06-16                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -160,8 +160,7 @@ test_that(
             capture_columns = c("list_A", "list_B"),
             threshold = 0.10,
             list_pair = c("list_A", "list_B"),
-            nfolds = 5,
-            estimator = "PI"
+            nfolds = 5
         )
 
         # Check inherited fields
@@ -171,7 +170,6 @@ test_that(
         # Check EstimatorOptions-specific fields
         expect_equal(opts$list_pair, c("list_A", "list_B"))
         expect_equal(opts$nfolds, 5)
-        expect_equal(opts$estimator, "PI")
     }
 )
 
@@ -216,8 +214,7 @@ test_that(
             capture_columns = c("list_A", "list_B"),
             threshold = 0.10,
             list_pair = c("list_A", "list_B"),
-            nfolds = 5,
-            estimator = "DR"
+            nfolds = 5
         )
 
         expect_s3_class(opts, "EstimatorOptions")
@@ -311,16 +308,14 @@ test_that(
             capture_columns = c("list_A", "list_B"),
             threshold = 0.10,
             list_pair = c("list_A", "list_B"),
-            nfolds = 5,
-            estimator = "TMLE"
+            nfolds = 5
         )
         result <- opts$initialize(
             model = "gam",
             capture_columns = c("L1", "L2"),
             threshold = 0.15,
             list_pair = c("L1", "L2"),
-            nfolds = 10,
-            estimator = "DR"
+            nfolds = 10
         )
 
         expect_identical(result, opts)

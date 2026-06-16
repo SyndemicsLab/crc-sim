@@ -8,20 +8,20 @@ for different formula specifications. The user can specify the model family
 to use, either "poisson" or "negbin".}
 \usage{
 fit_loglinear_model(
-  data,
+  model_data,
   formula_object,
   model_family = c("poisson", "negbin")
 )
 }
 \arguments{
-\item{data}{a data frame containing the observed capture histories and
-frequency column.}
-
 \item{formula_object}{a formula object specifying the log-linear model to
 fit.}
 
 \item{model_family}{a string specifying the model family to use, either
 "poisson" or "negbin". Default is "poisson".}
+
+\item{data}{a data frame containing the observed capture histories and
+frequency column.}
 }
 \value{
 a fitted model object resulting from the log-linear model fit.

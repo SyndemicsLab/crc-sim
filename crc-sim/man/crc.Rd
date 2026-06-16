@@ -4,10 +4,11 @@
 \alias{crc}
 \title{Spatial Capture Re-Capture}
 \usage{
-crc(data, opts)
+crc(model_data, opts)
 }
 \arguments{
-\item{data}{Dataframe: A dataframe containing a frequency column and binary
+\item{model_data}{Dataframe: A dataframe containing a frequency column and
+binary
 columns indicating involvement in the given database}
 
 \item{opts}{Options Object: An object containing the options for the CRC

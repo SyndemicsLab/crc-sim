@@ -4,7 +4,7 @@
 # Created Date: 2026-05-15                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-21                                                    #
+# Last Modified: 2026-06-16                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -39,10 +39,10 @@ make_aic_options <- function(formulas = NULL, model = "poisson") {
 }
 
 test_that("aic_selection errors when opts is not an AICOptions object", {
-    data <- make_aic_fixture()
+    model_data <- make_aic_fixture()
 
     expect_error(
-        aic_selection(data, list()),
+        aic_selection(model_data, list()),
         "Invalid AICOptions object provided"
     )
 })
@@ -64,12 +64,12 @@ test_that("aic_selection errors when data is not a frequency table", {
 })
 
 test_that("aic_selection errors when frequency column exists but is not numeric", {
-    data <- make_aic_fixture()
-    data$N_ID <- as.character(data$N_ID)
+    model_data <- make_aic_fixture()
+    model_data$N_ID <- as.character(model_data$N_ID)
     opts <- make_aic_options()
 
     expect_error(
-        aic_selection(data, opts),
+        aic_selection(model_data, opts),
         "Data must be a frequency table"
     )
 })
@@ -101,11 +101,11 @@ test_that("build_aic_error_row returns expected NA fields and error message", {
 })
 
 test_that("build_aic_success_row returns expected schema and rounded values", {
-    data <- make_aic_fixture()
+    model_data <- make_aic_fixture()
     formula_object <- stats::as.formula("N_ID ~ capture_1 + capture_2")
 
     model <- fit_loglinear_model(
-        data = data,
+        model_data = model_data,
         formula_object = formula_object,
         model_family = "poisson"
     )
@@ -133,12 +133,12 @@ test_that("build_aic_success_row returns expected schema and rounded values", {
 })
 
 test_that("evaluate_formula_with_aic returns error-row shape on failures", {
-    data <- make_aic_fixture()
+    model_data <- make_aic_fixture()
     bad_formula <- stats::as.formula("N_ID ~ does_not_exist")
 
     out <- evaluate_formula_with_aic(
         formula_object = bad_formula,
-        data = data,
+        model_data = model_data,
         model_family = "poisson"
     )
 
@@ -150,13 +150,13 @@ test_that("evaluate_formula_with_aic returns error-row shape on failures", {
 })
 
 test_that("evaluate_formula_with_aic rejects unsupported model family", {
-    data <- make_aic_fixture()
+    model_data <- make_aic_fixture()
     formula_object <- stats::as.formula("N_ID ~ capture_1")
 
     expect_error(
         evaluate_formula_with_aic(
             formula_object = formula_object,
-            data = data,
+            model_data = model_data,
             model_family = "badfamily"
         ),
         "should be one of"
@@ -169,14 +169,14 @@ test_that(
         "and expected field types"
     ),
     {
-        data <- make_aic_fixture()
+        model_data <- make_aic_fixture()
         formulas <- list(
             stats::as.formula("N_ID ~ capture_1 + capture_2"),
             stats::as.formula("N_ID ~ capture_1 * capture_2")
         )
         opts <- make_aic_options(formulas = formulas)
 
-        out <- aic_selection(data, opts)
+        out <- aic_selection(model_data, opts)
 
         expect_s3_class(out, "data.frame")
         expect_equal(nrow(out), length(formulas))
@@ -196,14 +196,14 @@ test_that(
 )
 
 test_that("aic_selection handles mixed success and error formulas", {
-    data <- make_aic_fixture()
+    model_data <- make_aic_fixture()
     formulas <- list(
         stats::as.formula("N_ID ~ capture_1 + capture_2"),
         stats::as.formula("N_ID ~ does_not_exist")
     )
     opts <- make_aic_options(formulas = formulas)
 
-    out <- aic_selection(data, opts)
+    out <- aic_selection(model_data, opts)
 
     expect_equal(nrow(out), 2)
     expect_true(anyNA(out$error))
@@ -211,7 +211,7 @@ test_that("aic_selection handles mixed success and error formulas", {
 })
 
 test_that("aic_selection output is sorted by ascending AIC for successful rows", {
-    data <- make_aic_fixture()
+    model_data <- make_aic_fixture()
     formulas <- list(
         stats::as.formula("N_ID ~ capture_1 + capture_2"),
         stats::as.formula("N_ID ~ capture_1 + capture_2 + capture_3"),
@@ -219,7 +219,7 @@ test_that("aic_selection output is sorted by ascending AIC for successful rows",
     )
     opts <- make_aic_options(formulas = formulas)
 
-    out <- aic_selection(data, opts)
+    out <- aic_selection(model_data, opts)
 
     ok <- out[!is.na(out$AIC), , drop = FALSE]
     if (nrow(ok) > 1) {
@@ -230,23 +230,23 @@ test_that("aic_selection output is sorted by ascending AIC for successful rows",
 })
 
 test_that("aic_selection result contains formula strings from provided formulas", {
-    data <- make_aic_fixture()
+    model_data <- make_aic_fixture()
     formula_1 <- stats::as.formula("N_ID ~ capture_1 + capture_2")
     formula_2 <- stats::as.formula("N_ID ~ capture_1 * capture_2")
     opts <- make_aic_options(formulas = list(formula_1, formula_2))
 
-    out <- aic_selection(data, opts)
+    out <- aic_selection(model_data, opts)
 
     expect_true(any(grepl("capture_1", out$formula, fixed = TRUE)))
     expect_true(any(grepl("capture_2", out$formula, fixed = TRUE)))
 })
 
 test_that("aic_selection preserves error text in output rows", {
-    data <- make_aic_fixture()
+    model_data <- make_aic_fixture()
     formulas <- list(stats::as.formula("N_ID ~ not_a_real_column"))
     opts <- make_aic_options(formulas = formulas)
 
-    out <- aic_selection(data, opts)
+    out <- aic_selection(model_data, opts)
 
     expect_equal(nrow(out), 1)
     expect_true(is.na(out$estimate))

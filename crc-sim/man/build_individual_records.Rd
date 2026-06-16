@@ -4,13 +4,14 @@
 \alias{build_individual_records}
 \title{Build Individual Simulation Records. This builds all the individual records
 for a simulated dataset. Each record produced by this function represents
-one individual and contains the capture indicators and one-hot category
-indicators. This function is traditionally wrapped by \code{create_data} but
+one individual and contains the capture indicators and simulated numerical
+covariate indicators. This function is traditionally wrapped by
+\code{create_data} but
 exposed for users who want more granular control over building the simulation
-data. Importantly, the capture_probs and category_probs are not validated so
+data. Importantly, the capture_probs and covariate_specs are not validated so
 errors may not be as descriptive.}
 \usage{
-build_individual_records(n_individuals, capture_probs, category_probs)
+build_individual_records(n_individuals, capture_probs, covariate_specs)
 }
 \arguments{
 \item{n_individuals}{int: number of participants to simulate}
@@ -18,8 +19,9 @@ build_individual_records(n_individuals, capture_probs, category_probs)
 \item{capture_probs}{numeric vector: capture probabilities of length equal to
 the number of capture columns}
 
-\item{category_probs}{numeric vector: category probabilities of length equal
-to the number of category columns. Must sum to 1.}
+\item{covariate_specs}{data.frame: covariate specification table with one row
+per covariate and columns \code{distribution}, \code{p1}, \code{p2}, and
+\code{dtype}.}
 }
 \value{
 a tibble where each row is an individual record
@@ -27,10 +29,11 @@ a tibble where each row is an individual record
 \description{
 Build Individual Simulation Records. This builds all the individual records
 for a simulated dataset. Each record produced by this function represents
-one individual and contains the capture indicators and one-hot category
-indicators. This function is traditionally wrapped by \code{create_data} but
+one individual and contains the capture indicators and simulated numerical
+covariate indicators. This function is traditionally wrapped by
+\code{create_data} but
 exposed for users who want more granular control over building the simulation
-data. Importantly, the capture_probs and category_probs are not validated so
+data. Importantly, the capture_probs and covariate_specs are not validated so
 errors may not be as descriptive.
 }
 \keyword{internal}

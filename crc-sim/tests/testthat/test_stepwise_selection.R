@@ -4,7 +4,7 @@
 # Created Date: 2026-05-15                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-21                                                    #
+# Last Modified: 2026-06-16                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -42,10 +42,10 @@ make_stepwise_options <- function(
 # ============================================================================
 
 test_that("stepwise_selection errors when opts is not a StepwiseOptions object", {
-    data <- make_stepwise_fixture()
+    model_data <- make_stepwise_fixture()
 
     expect_error(
-        stepwise_selection(data, list()),
+        stepwise_selection(model_data, list()),
         "Invalid StepwiseOptions object provided"
     )
 })
@@ -67,12 +67,12 @@ test_that("stepwise_selection errors when data is not a frequency table", {
 })
 
 test_that("stepwise_selection errors when frequency column is not numeric", {
-    data <- make_stepwise_fixture()
-    data$N_ID <- as.character(data$N_ID)
+    model_data <- make_stepwise_fixture()
+    model_data$N_ID <- as.character(model_data$N_ID)
     opts <- make_stepwise_options()
 
     expect_error(
-        stepwise_selection(data, opts),
+        stepwise_selection(model_data, opts),
         "Data must be a frequency table"
     )
 })
@@ -82,10 +82,10 @@ test_that("stepwise_selection errors when frequency column is not numeric", {
 # ============================================================================
 
 test_that("stepwise_selection returns list with required fields", {
-    data <- make_stepwise_fixture()
+    model_data <- make_stepwise_fixture()
     opts <- make_stepwise_options()
 
-    result <- stepwise_selection(data, opts)
+    result <- stepwise_selection(model_data, opts)
 
     expect_type(result, "list")
     expect_named(
@@ -103,20 +103,20 @@ test_that("stepwise_selection returns list with required fields", {
 })
 
 test_that("stepwise_selection returns numeric estimate rounded to 2 decimals", {
-    data <- make_stepwise_fixture()
+    model_data <- make_stepwise_fixture()
     opts <- make_stepwise_options()
 
-    result <- stepwise_selection(data, opts)
+    result <- stepwise_selection(model_data, opts)
 
     expect_type(result$estimate, "double")
     expect_equal(result$estimate, round(result$estimate, 2))
 })
 
 test_that("stepwise_selection returns numeric CI bounds rounded to 2 decimals", {
-    data <- make_stepwise_fixture()
+    model_data <- make_stepwise_fixture()
     opts <- make_stepwise_options()
 
-    result <- stepwise_selection(data, opts)
+    result <- stepwise_selection(model_data, opts)
 
     expect_type(result$lower_ci, "double")
     expect_type(result$upper_ci, "double")
@@ -125,38 +125,38 @@ test_that("stepwise_selection returns numeric CI bounds rounded to 2 decimals", 
 })
 
 test_that("stepwise_selection returns valid confidence interval", {
-    data <- make_stepwise_fixture()
+    model_data <- make_stepwise_fixture()
     opts <- make_stepwise_options()
 
-    result <- stepwise_selection(data, opts)
+    result <- stepwise_selection(model_data, opts)
 
     expect_lte(result$lower_ci, result$estimate)
     expect_lte(result$estimate, result$upper_ci)
 })
 
 test_that("stepwise_selection returns numeric AIC", {
-    data <- make_stepwise_fixture()
+    model_data <- make_stepwise_fixture()
     opts <- make_stepwise_options()
 
-    result <- stepwise_selection(data, opts)
+    result <- stepwise_selection(model_data, opts)
 
     expect_type(result$AIC, "double")
 })
 
 test_that("stepwise_selection returns formula object", {
-    data <- make_stepwise_fixture()
+    model_data <- make_stepwise_fixture()
     opts <- make_stepwise_options()
 
-    result <- stepwise_selection(data, opts)
+    result <- stepwise_selection(model_data, opts)
 
     expect_s3_class(result$formula, "formula")
 })
 
 test_that("stepwise_selection returns model family string", {
-    data <- make_stepwise_fixture()
+    model_data <- make_stepwise_fixture()
     opts <- make_stepwise_options(model = "poisson")
 
-    result <- stepwise_selection(data, opts)
+    result <- stepwise_selection(model_data, opts)
 
     expect_equal(result$model, "poisson")
 })
@@ -166,10 +166,10 @@ test_that("stepwise_selection returns model family string", {
 # ============================================================================
 
 test_that("stepwise_selection works with poisson model", {
-    data <- make_stepwise_fixture()
+    model_data <- make_stepwise_fixture()
     opts <- make_stepwise_options(model = "poisson")
 
-    result <- stepwise_selection(data, opts)
+    result <- stepwise_selection(model_data, opts)
 
     expect_equal(result$model, "poisson")
     expect_false(is.na(result$estimate))
@@ -177,10 +177,13 @@ test_that("stepwise_selection works with poisson model", {
 })
 
 test_that("stepwise_selection works with negbin model", {
-    data <- make_stepwise_fixture()
+    model_data <- make_stepwise_fixture()
     opts <- make_stepwise_options(model = "negbin")
 
-    result <- stepwise_selection(data, opts)
+    # Suppress alternation limit reached
+    # nolint start: implicit_assignment_linter
+    suppressWarnings(result <- stepwise_selection(model_data, opts))
+    # nolint end: implicit_assignment_linter
 
     expect_equal(result$model, "negbin")
     expect_false(is.na(result$estimate))
@@ -188,19 +191,19 @@ test_that("stepwise_selection works with negbin model", {
 })
 
 test_that("stepwise_selection respects interaction_limit = 2", {
-    data <- make_stepwise_fixture()
+    model_data <- make_stepwise_fixture()
     opts <- make_stepwise_options(interaction_limit = 2, direction = "both")
 
-    result <- stepwise_selection(data, opts)
+    result <- stepwise_selection(model_data, opts)
 
     expect_false(is.na(result$AIC))
 })
 
 test_that("stepwise_selection respects interaction_limit = 3", {
-    data <- make_stepwise_fixture()
+    model_data <- make_stepwise_fixture()
     opts <- make_stepwise_options(interaction_limit = 3, direction = "both")
 
-    result <- stepwise_selection(data, opts)
+    result <- stepwise_selection(model_data, opts)
 
     expect_false(is.na(result$AIC))
 })
@@ -261,10 +264,10 @@ test_that("stepwise_selection results are reproducible with seed", {
 })
 
 test_that("stepwise_selection final formula is within scope", {
-    data <- make_stepwise_fixture()
+    model_data <- make_stepwise_fixture()
     opts <- make_stepwise_options(interaction_limit = 2)
 
-    result <- stepwise_selection(data, opts)
+    result <- stepwise_selection(model_data, opts)
 
     # Final formula should include response and at least some predictors
     formula_vars <- all.vars(result$formula)
@@ -273,11 +276,11 @@ test_that("stepwise_selection final formula is within scope", {
 })
 
 test_that("stepwise_selection handles case where formula does not reduce", {
-    data <- make_stepwise_fixture()
+    model_data <- make_stepwise_fixture()
     # With low p-value threshold, stepwise might not remove any variables
     opts <- make_stepwise_options(threshold = 0.9, direction = "backward")
 
-    result <- stepwise_selection(data, opts)
+    result <- stepwise_selection(model_data, opts)
 
     expect_false(is.na(result$AIC))
     expect_false(is.na(result$estimate))
@@ -288,10 +291,10 @@ test_that("stepwise_selection handles case where formula does not reduce", {
 # ============================================================================
 
 test_that("stepwise_selection works with direction = 'forward'", {
-    data <- make_stepwise_fixture()
+    model_data <- make_stepwise_fixture()
     opts <- make_stepwise_options(direction = "forward")
 
-    result <- stepwise_selection(data, opts)
+    result <- stepwise_selection(model_data, opts)
 
     expect_equal(result$model, "poisson")
     expect_false(is.na(result$estimate))
@@ -299,10 +302,10 @@ test_that("stepwise_selection works with direction = 'forward'", {
 })
 
 test_that("stepwise_selection works with direction = 'backward'", {
-    data <- make_stepwise_fixture()
+    model_data <- make_stepwise_fixture()
     opts <- make_stepwise_options(direction = "backward")
 
-    result <- stepwise_selection(data, opts)
+    result <- stepwise_selection(model_data, opts)
 
     expect_equal(result$model, "poisson")
     expect_false(is.na(result$estimate))
@@ -310,10 +313,10 @@ test_that("stepwise_selection works with direction = 'backward'", {
 })
 
 test_that("stepwise_selection works with direction = 'both'", {
-    data <- make_stepwise_fixture()
+    model_data <- make_stepwise_fixture()
     opts <- make_stepwise_options(direction = "both")
 
-    result <- stepwise_selection(data, opts)
+    result <- stepwise_selection(model_data, opts)
 
     expect_equal(result$model, "poisson")
     expect_false(is.na(result$estimate))
@@ -321,96 +324,96 @@ test_that("stepwise_selection works with direction = 'both'", {
 })
 
 test_that("forward direction with interaction_limit = 2", {
-    data <- make_stepwise_fixture()
+    model_data <- make_stepwise_fixture()
     opts <- make_stepwise_options(
         direction = "forward",
         interaction_limit = 2
     )
 
-    result <- stepwise_selection(data, opts)
+    result <- stepwise_selection(model_data, opts)
 
     expect_false(is.na(result$AIC))
     expect_false(is.na(result$estimate))
 })
 
 test_that("backward direction with interaction_limit = 2", {
-    data <- make_stepwise_fixture()
+    model_data <- make_stepwise_fixture()
     opts <- make_stepwise_options(
         direction = "backward",
         interaction_limit = 2
     )
 
-    result <- stepwise_selection(data, opts)
+    result <- stepwise_selection(model_data, opts)
 
     expect_false(is.na(result$AIC))
     expect_false(is.na(result$estimate))
 })
 
 test_that("forward direction with negbin model", {
-    data <- make_stepwise_fixture()
+    model_data <- make_stepwise_fixture()
     opts <- make_stepwise_options(
         model = "negbin",
         direction = "forward"
     )
 
-    result <- stepwise_selection(data, opts)
+    result <- stepwise_selection(model_data, opts)
 
     expect_equal(result$model, "negbin")
     expect_false(is.na(result$AIC))
 })
 
 test_that("backward direction with negbin model", {
-    data <- make_stepwise_fixture()
+    model_data <- make_stepwise_fixture()
     opts <- make_stepwise_options(
         model = "negbin",
         direction = "backward"
     )
 
-    result <- stepwise_selection(data, opts)
+    result <- stepwise_selection(model_data, opts)
 
     expect_equal(result$model, "negbin")
     expect_false(is.na(result$AIC))
 })
 
 test_that("forward direction with interaction_limit = 3", {
-    data <- make_stepwise_fixture()
+    model_data <- make_stepwise_fixture()
     opts <- make_stepwise_options(
         direction = "forward",
         interaction_limit = 3
     )
 
-    result <- stepwise_selection(data, opts)
+    result <- stepwise_selection(model_data, opts)
 
     expect_false(is.na(result$AIC))
 })
 
 test_that("backward direction with interaction_limit = 3", {
-    data <- make_stepwise_fixture()
+    model_data <- make_stepwise_fixture()
     opts <- make_stepwise_options(
         direction = "backward",
         interaction_limit = 3
     )
 
-    result <- stepwise_selection(data, opts)
+    result <- stepwise_selection(model_data, opts)
 
     expect_false(is.na(result$AIC))
 })
 
 test_that("forward direction produces valid confidence interval", {
-    data <- make_stepwise_fixture()
+    model_data <- make_stepwise_fixture()
     opts <- make_stepwise_options(direction = "forward")
 
-    result <- stepwise_selection(data, opts)
+    result <- stepwise_selection(model_data, opts)
 
     expect_lte(result$lower_ci, result$estimate)
     expect_lte(result$estimate, result$upper_ci)
 })
 
 test_that("backward direction produces valid confidence interval", {
-    data <- make_stepwise_fixture()
+    model_data <- make_stepwise_fixture()
     opts <- make_stepwise_options(direction = "backward")
 
-    result <- stepwise_selection(data, opts)
+    result <- stepwise_selection(model_data, opts)
 
     expect_lte(result$lower_ci, result$estimate)
     expect_lte(result$estimate, result$upper_ci)

@@ -4,7 +4,7 @@
 # Created Date: 2026-05-14                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-21                                                    #
+# Last Modified: 2026-06-16                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -15,8 +15,8 @@
 #' formula, and returns a dataframe with the formula, estimate, AIC value,
 #' confidence interval, and any error messages for each formula.
 #'
-#' @param data a data frame containing the observed capture histories and a
-#' frequency column.
+#' @param model_data a data frame containing the observed capture histories and
+#' a frequency column.
 #' @param formulas a list of formula objects specifying the log-linear models to
 #' fit and compare using AIC
 #' @param model_family a string specifying the model family to use, either
@@ -27,25 +27,24 @@
 #' @importFrom purrr map
 #' @importFrom dplyr bind_rows arrange
 #'
-#' @keywords internal
 #' @export
-aic_selection <- function(data, opts) {
+aic_selection <- function(model_data, opts) {
     if (!inherits(opts, "AICOptions")) {
         stop("Invalid AICOptions object provided.")
     }
 
-    if (!is_frequency_table(data, opts$frequency_col_name)) {
+    if (!is_frequency_table(model_data, opts[["frequency_col_name"]])) {
         stop(paste(
             "Data must be a frequency table with a numeric frequency column",
-            opts$frequency_col_name
+            opts[["frequency_col_name"]]
         ))
     }
 
     output <- map(
-        opts$formulas,
+        opts[["formulas"]],
         evaluate_formula_with_aic,
-        data = data,
-        model_family = opts$model
+        model_data = model_data,
+        model_family = opts[["model"]]
     ) |>
         bind_rows() |>
         arrange(.data[["AIC"]])
@@ -61,8 +60,8 @@ aic_selection <- function(data, opts) {
 #' for the formula.
 #'
 #' @param formula_object a formula object specifying the log-linear model to fit
-#' @param data a data frame containing the observed capture histories and a
-#' frequency column.
+#' @param model_data a data frame containing the observed capture histories and
+#' a frequency column.
 #' @param model_family a string specifying the model family to use, either
 #' "poisson" or "negbin". Default is "poisson".
 #' @return a data frame with the formula, estimate, AIC value, confidence
@@ -72,13 +71,17 @@ aic_selection <- function(data, opts) {
 #' @noRd
 evaluate_formula_with_aic <- function(
     formula_object,
-    data,
+    model_data,
     model_family = c("poisson", "negbin")
 ) {
     model_family <- match.arg(model_family)
     return(tryCatch(
         {
-            model <- fit_loglinear_model(data, formula_object, model_family)
+            model <- fit_loglinear_model(
+                model_data,
+                formula_object,
+                model_family
+            )
             return(build_aic_success_row(model, formula_object))
         },
         error = function(error) {

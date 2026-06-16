@@ -19,9 +19,6 @@ lists used by the plugin estimator.}
 
     \item{\code{nfolds}}{Integer scalar giving the number of cross-validation
 folds.}
-
-    \item{\code{estimator}}{Character scalar naming the plugin estimator
-implementation.}
   }
   \if{html}{\out{</div>}}
 }
@@ -39,14 +36,7 @@ implementation.}
   Create a new \\code{EstimatorOptions} instance.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
-    \preformatted{EstimatorOptions$new(
-  model,
-  capture_columns,
-  threshold,
-  list_pair,
-  nfolds,
-  estimator = c("DR", "PI", "TMLE")
-)}
+    \preformatted{EstimatorOptions$new(model, capture_columns, threshold, list_pair, nfolds)}
     \if{html}{\out{</div>}}
   }
   \subsection{Arguments}{
@@ -62,8 +52,6 @@ threshold-based selection methods.}
 lists used by the plugin estimator.}
       \item{\code{nfolds}}{Integer scalar giving the number of cross-validation
 folds.}
-      \item{\code{estimator}}{Character scalar naming the plugin estimator
-implementation.}
     }
     \if{html}{\out{</div>}}
   }
