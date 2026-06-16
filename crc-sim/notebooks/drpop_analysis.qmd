@@ -7,6 +7,7 @@ author:
 ```{r}
 library(crcsim)
 library(drpop)
+library(dplyr)
 ```
 
 # Quick Analysis
@@ -17,10 +18,10 @@ n_individuals <- 500
 n_captures <- 6
 p_captures <- c(0.45, 0.35, 0.25, 0.20, 0.4, 0.1)
 covariate_df <- data.frame(
-    distribution = c("uniform"),
-    p1 = c(1),
-    p2 = c(5),
-    dtype = c("integer")
+    distribution = c("uniform", "uniform"),
+    p1 = c(0, 0),
+    p2 = c(1, 1),
+    dtype = c("integer", "integer")
 )
 
 sim_data <- create_data(
@@ -42,4 +43,21 @@ qhat <- drpop::popsize(
 psin_estimates <- drpop::popsize(
     data = sim_data, getnuis = qhat$nuis, idfold = qhat$idfold
 )
+```
+
+# Now the Original
+
+```{r}
+no_cov_sim_data <- sim_data |>
+    select(-covariate_1) |>
+    build_contingency_table()
+
+aic_options <- AICOptions$new(
+    model = c("poisson"),
+    capture_columns = c(
+        "capture_1", "capture_2", "capture_3",
+        "capture_4", "capture_5", "capture_6"
+    ),
+)
+# We need to fill in the other selected CRC methods here
 ```

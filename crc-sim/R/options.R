@@ -4,7 +4,7 @@
 # Created Date: 2026-05-15                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-21                                                    #
+# Last Modified: 2026-06-16                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -295,9 +295,6 @@ EstimatorOptions <- R6::R6Class( # nolint: object_name_linter
         #' @field nfolds Integer scalar giving the number of cross-validation
         #' folds.
         nfolds = NULL,
-        #' @field estimator Character scalar naming the plugin estimator
-        #' implementation.
-        estimator = NULL,
 
         #' @description Create a new \\code{EstimatorOptions} instance.
         #' @param model Character scalar identifying the model family.
@@ -310,22 +307,17 @@ EstimatorOptions <- R6::R6Class( # nolint: object_name_linter
         #' @param capture_columns Character vector naming the binary capture
         #' indicator columns. If NULL, all binary columns will be assumed to be
         #' capture indicators.
-        #' @param estimator Character scalar naming the plugin estimator
-        #' implementation.
         #' @return The initialized \\code{EstimatorOptions} object.
         initialize = function(
             model,
             capture_columns,
             threshold,
             list_pair,
-            nfolds,
-            estimator = c("DR", "PI", "TMLE")
+            nfolds
         ) {
-            estimator <- match.arg(estimator)
             super$initialize(model, capture_columns, threshold)
             self$list_pair <- list_pair
             self$nfolds <- nfolds
-            self$estimator <- estimator
             return(self)
         }
     )

@@ -4,7 +4,7 @@
 # Created Date: 2026-05-18                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-28                                                    #
+# Last Modified: 2026-06-16                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -75,6 +75,7 @@ estimate_capture_probability <- function(
 #'
 #' @keywords internal
 #' @export
+# nolint start: cyclocomp_linter
 conditional_capture_prob <- function(q_j, q_k, q_jk) {
     if (
         is_probability_vector(q_j) &&
@@ -97,6 +98,7 @@ conditional_capture_prob <- function(q_j, q_k, q_jk) {
     gamma_hat <- q_jk / (q_j * q_k)
     return(gamma_hat)
 }
+# nolint end: cyclocomp_linter
 
 #' Plugin estimator for capture probability
 #' @description Get the capture probability estimate for the standard plugin
