@@ -4,7 +4,7 @@
 # Created Date: 2026-02-17                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-05-14                                                    #
+# Last Modified: 2026-06-17                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -293,15 +293,17 @@ run_crc_bootstrap_parallel <- function(
 #' @export
 run_crc <- function(
     n_individuals = 3e5,
-    p_strata = 1,
     p_captures = c(0.45, 0.3, 0.2),
+    covariate_df = 1,
     suppress = 10,
-    mode = c("single", "bootstrap"),
-    n_bootstraps = 100,
+    iterations = 100,
+    estimation_option = StepwiseOptions(
+        direction = "both",
+        threshold = 0.05,
+        verbose = FALSE
+    ),
     methods = c("poisson", "negbin"),
     formula_selection = "stepwise",
-    opts_stepwise = default_stepwise_config(),
-    opts_tmle = default_tmle_config(),
     seed = 2024
 ) {
     mode <- match.arg(mode)
