@@ -14,7 +14,7 @@ library(dplyr)
 
 ```{r}
 set.seed(2024)
-n_individuals <- 3e5
+n_individuals <- 300000
 n_captures <- 6
 p_captures <- c(0.45, 0.35, 0.25, 0.20, 0.4, 0.1)
 covariate_df <- data.frame(
@@ -39,7 +39,7 @@ sim_data <- create_data(
     extract_captured_data(captures)
 
 no_cov_sim_data <- sim_data |>
-    select(-covariate_1) |>
+    select(-covariate_1, -covariate_2) |>
     build_contingency_table()
 
 known_pop_size <- nrow(sim_data)
@@ -130,11 +130,11 @@ final_results <- bind_rows(drpop_df, combo)
 p <- ggplot(final_results, aes(x = method, y = estimate)) +
     geom_point() +
     geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci), width = 0.2) +
-    geom_hline(yintercept = n_individuals, linetype = "dashed", color = "red") +
+    geom_hline(yintercept = 1.0, linetype = "dashed", color = "red") +
     labs(
-        title = "Population Size Estimates with 95% Confidence Intervals",
+        title = "Percent Relative Biases of Population Estimates",
         x = "Method",
-        y = "Estimated Population Size"
+        y = "Percent Relative Biases"
     ) +
     theme_minimal()
 ```

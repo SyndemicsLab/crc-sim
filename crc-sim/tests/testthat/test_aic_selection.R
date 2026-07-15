@@ -4,7 +4,7 @@
 # Created Date: 2026-05-15                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-16                                                    #
+# Last Modified: 2026-07-15                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -102,10 +102,16 @@ test_that("build_aic_error_row returns expected NA fields and error message", {
 
 test_that("build_aic_success_row returns expected schema and rounded values", {
     model_data <- make_aic_fixture()
+
+    captures <- c("capture_1", "capture_2", "capture_3")
+
+    captured_data <- extract_captured_data(model_data, captures)
+    uncaptured_data <- extract_uncaptured_data(model_data, captures)
+
     formula_object <- stats::as.formula("N_ID ~ capture_1 + capture_2")
 
     model <- fit_loglinear_model(
-        model_data = model_data,
+        model_data = captured_data,
         formula_object = formula_object,
         model_family = "poisson"
     )
