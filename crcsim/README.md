@@ -8,7 +8,7 @@ This repository is under development and being converted to a joint CRAN library
 
 ## Overview
 
-<img align="right" src="inst/extdata/crc-sim.png" style="float" width="200">
+<img align="right" src="inst/extdata/crcsim.png" style="float" width="200">
 
 To effectively tackle the overdose crisis, a nuanced understanding of Opioid Use Disorder (OUD) prevalence is crucial, both broadly and within targeted cohorts. Healthcare interactions provide estimates but may overlook those outside the healthcare system, leading to underestimation. Capture recapture (CRC) analysis is valuable in estimating prevalence by addressing underreporting in surveillance. Rich in history, the Syndemics Lab has utilized CRC procedures to estimate OUD prevalence in Massachusetts. Conventionally, a stepwise model selection process (MSP) is employed to identify the model that best fits the data. However, the MSP in estimating group-stratified prevalence is less explored, especially with sparse data. Additionally, the MSP works well with aggregate, uninformed data, however modern CRC methodologies are able to leverage relationships in the data to improve estimates and confidence interval bounds. This study uses simulations to investigate different MSPs for selecting conventional log-linear CRC models, with a focus on their ability to precisely estimate strata prevalence and the comparative impacts of estimators given covariates.
 

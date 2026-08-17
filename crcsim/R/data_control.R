@@ -1,10 +1,10 @@
 ################################################################################
 # File: data_control.R                                                         #
-# Project: crc-sim                                                             #
+# Project: crcsim                                                              #
 # Created Date: 2026-02-17                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-16                                                    #
+# Last Modified: 2026-08-17                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -71,6 +71,155 @@ create_data <- function(
     return(records)
 }
 
+#' Sample Captures for Individuals. This function generates a data frame of
+#' simulated capture data for a specified number of individuals and capture
+#' probabilities. Each row represents an individual, and each column represents
+#' a capture event. The values in the data frame are binary (0 or 1),
+#' indicating whether an individual was captured (1) or not (0) for each
+#' capture event.
+#'
+#' @param n_individuals int: The number of individuals to simulate.
+#' @param p_captures numeric vector: A vector of capture probabilities for each
+#' capture event. The length of this vector determines the number of capture
+#' events.
+#' @return A data frame where each row represents an individual and each column
+#' represents a capture event. The values are binary (0 or 1), indicating
+#' whether an individual was captured (1) or not (0) for each capture event.
+#'
+#' @export
+sample_captures <- function(
+    n_individuals,
+    p_captures
+) {
+    validate_create_args(
+        n_individuals = n_individuals,
+        n_captures = length(p_captures),
+        covariate_ranges = NULL,
+        return_frequency_table = FALSE
+    )
+    capture_probs <- normalize_p_captures(
+        n_captures = length(p_captures),
+        p_captures = p_captures
+    )
+
+    records <- lapply(seq_len(n_individuals), function(x) {
+        return(sample_single_capture(capture_probs))
+    })
+    records <- as.data.frame(do.call(rbind, records))
+    colnames(records) <- paste0("capture_", seq_along(capture_probs))
+    return(records)
+}
+
+#' Sample Captures Based on Covariates. This function generates a data frame of
+#' simulated capture data for a specified number of individuals based on the
+#' provided covariate data. Each row represents an individual, and each column
+#' represents a capture event. The values in the data frame are binary (0 or 1),
+#' indicating whether an individual was captured (1) or not (0) for each
+#' capture event. The capture probabilities are determined by the covariate
+#' values, specifically the "sex" column, where the probability of capture is
+#' higher for one sex compared to the other.
+#'
+#' @param data_table data.frame: A data frame containing covariate data for each
+#' individual. The data frame must contain a "sex" column with binary values (0
+#' or 1) indicating the sex of each individual.
+#' @param n_cols int: The number of capture columns to generate. Each column
+#' represents a capture event.
+#' @param covariate_conditions function: function that takes \code{data_table}
+#' and returns a numeric probability vector \code{capture_prob} in [0, 1].
+#' @return A data frame where each row represents an individual and each column
+#' represents a capture event. The values are binary (0 or 1), indicating
+#' whether an individual was captured (1) or not (0) for each capture event,
+#' based on the covariate values in the input data frame.
+#' @export
+captures_from_covariates <- function(
+    data_table,
+    n_cols,
+    cov_func
+) {
+    if (!is.data.frame(data_table)) {
+        stop("data_table must be a data.frame")
+    }
+    if (!is.numeric(n_cols) || length(n_cols) != 1 || n_cols %% 1 != 0) {
+        stop("n_cols must be an integer scalar")
+    }
+    if (!is.function(cov_func)) {
+        stop("cov_func must be a function")
+    }
+    if (n_cols <= 0) {
+        return(data_table)
+    }
+
+    capture_prob <- cov_func(data_table)
+    if (!is.numeric(capture_prob) || length(capture_prob) != nrow(data_table)) {
+        stop(paste0(
+            "cov_func must return a numeric vector",
+            " of length nrow(data_table)"
+        ))
+    }
+    if (any(is.na(capture_prob) | capture_prob < 0 | capture_prob > 1)) {
+        stop(paste0(
+            "cov_func must return probabilities between",
+            " 0 and 1 without NA"
+        ))
+    }
+
+    capture_cols <- paste0("capture_", seq_len(n_cols))
+    for (col in capture_cols) {
+        if (!col %in% colnames(data_table)) {
+            data_table[[col]] <- as.integer(stats::rbinom(
+                n = nrow(data_table),
+                size = 1,
+                prob = capture_prob
+            ))
+        }
+    }
+    return(data_table)
+}
+
+#' Default Covariate Conditions for Capture Probability.
+#' This function computes \code{capture_prob} from four covariates using a
+#' logistic transform.
+#'
+#' @param data_table data.frame containing columns \code{covariate_1},
+#' \code{covariate_2}, \code{covariate_3}, and \code{covariate_4}.
+#' @param intercept The intercept value to update the covariates.
+#' @return numeric vector \code{capture_prob} with values in (0, 1).
+#' @export
+covariate_conditions <- function(data_table, intercept = 1) {
+    z1_values <- data_table[["covariate_1"]]
+    z2_values <- data_table[["covariate_2"]]
+    z3_values <- data_table[["covariate_3"]]
+    z4_values <- data_table[["covariate_4"]]
+
+    v <- exp(
+        intercept +
+            0.5 * z1_values +
+            0.5 * z2_values -
+            0.5 * z3_values -
+            0.5 * z4_values
+    )
+
+    capture_prob <- v / (1 + v)
+    return(capture_prob)
+}
+
+#' Sample Captures for a Single Individual. This function generates a binary
+#' vector indicating whether an individual was captured (1) or not (0) for each
+#' capture event based on the provided capture probabilities.
+#'
+#' @param capture_probs numeric vector: A vector of capture probabilities for
+#' each capture event. The length of this vector determines the number of
+#' capture events.
+#' @return A binary vector indicating whether the individual was captured (1)
+#' or not (0) for each capture event.
+#' @importFrom stats rbinom
+#' @keywords internal
+sample_single_capture <- function(capture_probs) {
+    n <- length(capture_probs)
+    out <- as.integer(stats::rbinom(n = n, size = 1, prob = capture_probs))
+    return(out)
+}
+
 #' Apply Suppression to Frequency Table Data.
 #' This function takes a frequency table dataset and applies suppression to the
 #' frequency column.
@@ -85,25 +234,28 @@ create_data <- function(
 #' @importFrom dplyr mutate
 #' @export
 suppress_data <- function(data, suppression_threshold, freq_col = "N_ID") {
-    if (!isTRUE(suppression_threshold > 0)) {
-        return(data)
+    if (!is.data.frame(data)) {
+        stop("data must be a data.frame")
     }
-
+    if (
+        !is.numeric(suppression_threshold) || length(suppression_threshold) != 1
+    ) {
+        stop("suppression_threshold must be a numeric scalar")
+    }
+    if (!is.character(freq_col) || length(freq_col) != 1) {
+        stop("freq_col must be a single column name")
+    }
     if (!freq_col %in% colnames(data)) {
-        stop(
-            "Frequency column N_ID not found in data. Cannot apply suppression."
-        )
+        stop("Frequency column not found in data. Cannot apply suppression.")
     }
-    suppressed_data <- data |>
-        dplyr::mutate(
-            {{ freq_col }} := ifelse(
-                {{ freq_col }} <= suppression_threshold,
-                -1,
-                {{ freq_col }}
-            )
-        )
-
-    return(suppressed_data)
+    if (!is.numeric(data[[freq_col]])) {
+        stop("Frequency column must be numeric")
+    }
+    data <- dplyr::filter_out(
+        data,
+        freq_col > 0 & freq_col <= suppression_threshold
+    )
+    return(data)
 }
 
 #' Get Captured Rows
@@ -505,6 +657,16 @@ sample_covariate_values <- function(covariate_specs) {
     names(values) <- paste0("covariate_", seq_len(n))
 
     return(values)
+}
+
+sample_default_covariate <- function() {
+    default_spec <- data.frame(
+        distribution = "uniform",
+        p1 = 0,
+        p2 = 1,
+        dtype = "integer"
+    )
+    return(sample_covariate_value(default_spec))
 }
 
 #' Sample one numerical covariate value from a specification row

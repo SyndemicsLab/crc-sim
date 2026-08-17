@@ -1,80 +1,84 @@
 ################################################################################
-# File: sim.R                                                                  #
-# Project: crc-sim                                                             #
-# Created Date: 2026-06-18                                                     #
+# File: simulate.R                                                             #
+# Project: crcsim                                                              #
+# Created Date: 2026-08-17                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-07-15                                                    #
+# Last Modified: 2026-08-17                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
 ################################################################################
 
-library(crcsim)
-library(drpop)
-library(dplyr)
-library(purrr)
-
-run_crc_simulations <- function(
+#' Run the CRC Simulations for the provided number of individuals, covariates,
+#' and captures.
+#'
+#' @param n_individuals The number of individuals to simulate.
+#' @param n_covariates The covariates that accompany the captures.
+#' @param captures the captures that accompany each covariate.
+#' @return The results of the CRC Simulation
+#'
+#' @importFrom dplyr select rename mutate
+#' @importFrom drpop popsize
+#' @export
+simulate <- function(
     n_individuals,
-    n_captures,
-    p_captures,
-    covariate_df,
-    captures
+    n_covariates,
+    captures,
+    cov_func = covariate_conditions
 ) {
-    sim_data <- create_data(
-        n_individuals = n_individuals,
-        n_captures = n_captures,
-        p_captures = p_captures,
-        covariate_ranges = covariate_df
-    ) |>
+    cov_cols <- paste0("covariate_", seq_len(n_covariates))
+    sim_data <- build_covariate_data(n_individuals, n_covariates) |>
+        captures_from_covariates(length(captures), cov_func) |>
+        relocate_covariates(cov_cols) |>
         all_int_cols_to_numeric() |>
         extract_captured_data(captures)
 
     no_cov_sim_data <- sim_data |>
-        select(-covariate_1, -covariate_2) |>
-        build_contingency_table()
+        select(-starts_with("covariate_")) |>
+        build_contingency_table() |>
+        suppress_data(10)
 
     known_pop_size <- nrow(sim_data)
     unknown_pop_size <- n_individuals - known_pop_size
 
-    qhat <- drpop::popsize(
+    qhat <- popsize(
         data = sim_data,
-        funcname = c("logit"),
+        funcname = "logit",
         nfolds = 2,
         margin = 0.005
     )
 
-    psin_estimates <- drpop::popsize(
+    psin_estimates <- popsize(
         data = sim_data,
         getnuis = qhat$nuis,
         idfold = qhat$idfold
     )$result
 
-    drpop_df <- dplyr::select(
+    drpop_df <- select(
         psin_estimates,
         c("method", "n", "cin.l", "cin.u")
     ) |>
-        dplyr::rename(
+        rename(
             estimate = n,
             lower_ci = cin.l,
             upper_ci = cin.u
         ) |>
-        dplyr::mutate(
+        mutate(
             estimate = ((estimate - n_individuals) / n_individuals) * 100,
             lower_ci = ((lower_ci - n_individuals) / n_individuals) * 100,
             upper_ci = ((upper_ci - n_individuals) / n_individuals) * 100
         )
 
     aic_options <- AICOptions$new(
-        model = c("poisson"),
-        capture_columns = captures,
+        model = "poisson",
+        capture_columns = captures
     )
 
     step_options <- StepwiseOptions$new(
-        model = c("poisson"),
+        model = "poisson",
         capture_columns = captures,
-        threshold = c(0.005),
+        threshold = 0.005,
         direction = "both",
         frequency_col_name = "N_ID",
         interaction_limit = 2
@@ -83,6 +87,9 @@ run_crc_simulations <- function(
     aic_results <- crc(no_cov_sim_data, aic_options)
     step_results <- crc(no_cov_sim_data, step_options)
 
+    # nolint start: indentation_linter
+    # Turning off indentation lint because the double parentheses are causing
+    # issues. The code is correct and functions as expected.
     selection_df <- data.frame(
         method = c("AIC-Poisson", "Stepwise-Poisson"),
         estimate = c(
@@ -107,16 +114,17 @@ run_crc_simulations <- function(
                 100
         )
     )
+    # nolint end: indentation_linter
 
     aic_options <- AICOptions$new(
-        model = c("negbin"),
-        capture_columns = captures,
+        model = "negbin",
+        capture_columns = captures
     )
 
     step_options <- StepwiseOptions$new(
-        model = c("negbin"),
+        model = "negbin",
         capture_columns = captures,
-        threshold = c(0.005),
+        threshold = 0.005,
         direction = "both",
         frequency_col_name = "N_ID",
         interaction_limit = 2
@@ -125,6 +133,9 @@ run_crc_simulations <- function(
     aic_nb_results <- crc(no_cov_sim_data, aic_options)
     step_nb_results <- crc(no_cov_sim_data, step_options)
 
+    # nolint start: indentation_linter
+    # Turning off indentation lint because the double parentheses are causing
+    # issues. The code is correct and functions as expected.
     selection_nb_df <- data.frame(
         method = c("AIC-Negbin", "Stepwise-Negbin"),
         estimate = c(
@@ -149,49 +160,8 @@ run_crc_simulations <- function(
                 100
         )
     )
+    # nolint end: indentation_linter
 
     combo <- bind_rows(selection_df, selection_nb_df)
     return(bind_rows(drpop_df, combo))
 }
-
-
-set.seed(2024)
-n_individuals <- 3e5
-n_captures <- 6
-p_captures <- c(0.45, 0.35, 0.25, 0.20, 0.4, 0.1)
-covariate_df <- data.frame(
-    distribution = c("uniform", "uniform"),
-    p1 = c(0, 0),
-    p2 = c(1, 1),
-    dtype = c("integer", "integer")
-)
-
-captures <- c(
-    "capture_1",
-    "capture_2",
-    "capture_3",
-    "capture_4",
-    "capture_5",
-    "capture_6"
-)
-
-res <- map(
-    seq_len(1),
-    ~ run_crc_simulations(
-        n_individuals = n_individuals,
-        n_captures = n_captures,
-        p_captures = p_captures,
-        covariate_df = covariate_df,
-        captures = captures
-    )
-)
-
-final_results <- bind_rows(res) |>
-    group_by(method) |>
-    summarise(
-        estimate = mean(estimate),
-        lower_ci = mean(lower_ci),
-        upper_ci = mean(upper_ci)
-    )
-
-write.csv(final_results, "final_results.csv", row.names = FALSE)

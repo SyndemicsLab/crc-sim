@@ -1,0 +1,129 @@
+---
+title: "Analysis"
+author:
+    - name: "Matthew Carroll"
+---
+
+# Anticipated Flow
+
+```{mermaid}
+flowchart LR
+    A[Decide Inputs] --> B{"Do we want covariates?"}
+    B --> |Yes| C{"Do Covariates Depend on Capture Probabilities?"}
+    C --> |Yes| D["Sample Covariates from Capture Probabilities"]
+    C --> |No| E["Sample Covariates from Uniform Distribution"]
+    B --> |No| F["Read raw capture probabilities"]
+    D --> G["Create Capture Table"]
+    E --> G
+    F --> G
+    G --> H{"Which Model Estimation Do We Use?"}
+    H --> |"TMLE, DR, and PI"| J["Remove Uncaptured Rows"]
+    H --> |"Stepwise and AIC"| K["Create Frequency Table and Remove Covariates"]
+    K --> J
+    J --> L["Build and Run Model"]
+```
+
+```{r}
+devtools::load_all("crcsim")
+library(dplyr)
+library(purrr)
+```
+
+# Setup
+
+```{r}
+set.seed(2024)
+n_individuals <- 300000
+n_sims <- 10
+n_covariates <- 4
+
+captures <- c(
+    "capture_1",
+    "capture_2",
+    "capture_3",
+    "capture_4",
+    "capture_5",
+    "capture_6"
+)
+```
+
+## Defining the Covariates
+
+```{r}
+covariate_function <- function(data_table) {
+    intercept <- -2
+    z1_values <- data_table[["covariate_1"]]
+    z2_values <- data_table[["covariate_2"]]
+    z3_values <- data_table[["covariate_3"]]
+    z4_values <- data_table[["covariate_4"]]
+
+    v <- exp(
+        intercept +
+            0.5 * z1_values +
+            0.5 * z2_values -
+            0.5 * z3_values -
+            0.5 * z4_values
+    )
+
+    capture_prob <- v / (1 + v)
+    return(capture_prob)
+}
+```
+
+# Run the Simulation
+
+```{r}
+# nolint start: implicit_assignment_linter
+# Necessary to suppress output from the simulations. The results are captured
+# and stored in the `res` variable.
+invisible(capture.output(
+    res <- map(
+        seq_len(n_sims),
+        ~ simulate(
+            n_individuals = n_individuals,
+            n_covariates = n_covariates,
+            captures = captures
+        )
+    )
+))
+# nolint end: implicit_assignment_linter
+```
+
+# Summarizing Analysis
+
+```{r}
+final_results <- bind_rows(res) |>
+    mutate(coverage = as.numeric(lower_ci <= 0 & upper_ci >= 0)) |>
+    group_by(method) |>
+    summarize(
+        estimate = mean(estimate),
+        lower_ci = mean(lower_ci),
+        upper_ci = mean(upper_ci),
+        coverage = sum(coverage) / n()
+    )
+```
+
+# Saving
+
+```{r}
+write.csv(final_results, "final_results_-2int.csv", row.names = FALSE)
+```
+
+# Graphing
+
+```{r}
+library(ggplot2)
+
+plt <- ggplot(final_results, aes(x = method, y = estimate)) +
+    geom_point() +
+    geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci), width = 0.2) +
+    geom_hline(yintercept = 0.0, linetype = "dashed", color = "red") +
+    labs(
+        title = "Percent Relative Biases of Population Estimates",
+        x = "Method",
+        y = "Percent Relative Biases"
+    ) +
+    theme_minimal()
+
+plt
+```
