@@ -29,4 +29,3 @@ list of potential formulas to fit, fits the specified model for each
 formula, and returns a dataframe with the formula, estimate, AIC value,
 confidence interval, and any error messages for each formula.
 }
-\keyword{internal}

@@ -21,4 +21,3 @@ Aggregate Records into a Contingency Table. This function takes the row level
 records produced by \code{build_individual_records} and aggregates identical
 rows while appending a frequency column \code{N_ID}.
 }
-\keyword{internal}

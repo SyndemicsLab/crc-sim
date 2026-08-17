@@ -32,4 +32,3 @@ Generally used as a helper function within the CRC function to fit models
 for different formula specifications. The user can specify the model family
 to use, either "poisson" or "negbin".
 }
-\keyword{internal}

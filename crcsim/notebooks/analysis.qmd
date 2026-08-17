@@ -35,7 +35,6 @@ library(purrr)
 set.seed(2024)
 n_individuals <- 300000
 n_sims <- 10
-n_covariates <- 4
 
 captures <- c(
     "capture_1",
@@ -49,9 +48,17 @@ captures <- c(
 
 ## Defining the Covariates
 
+The core strength of TMLE and DR rely on conditional independence. This means that we must create a dataset where captures are based on an underlying set of covariates. In reality, this would reflect biological or behavioral characteristics of the population, such as age or sex. 
+
+To do this, we provide a functional parameter to the `simulate` function that takes a data table of covariates and returns a vector of capture probabilities. Currently, the function converts quantiatiatve covariates into categorical one-hot encoded variables. The function below shows an example of how to create a set of capture probabilities based on the covariates. Covariate columns follow the naming convention: `covariate_1`, `covariate_2`, etc. The function below uses a logistic regression model to create capture probabilities based on the covariates.
+
+To shift the overall capture probabilities, we can adjust the intercept of the logistic regression model. The intercept is set to -2 in this example, which will result in lower overall capture probabilities. Adjusting this value will allow you to explore how different levels of capture probabilities affect the performance of the estimation methods.
+
 ```{r}
-covariate_function <- function(data_table) {
-    intercept <- -2
+n_covariates <- 4
+intercept <- -2
+
+log_regress_covariates <- function(data_table) {
     z1_values <- data_table[["covariate_1"]]
     z2_values <- data_table[["covariate_2"]]
     z3_values <- data_table[["covariate_3"]]
@@ -79,10 +86,11 @@ covariate_function <- function(data_table) {
 invisible(capture.output(
     res <- map(
         seq_len(n_sims),
-        ~ simulate(
+        ~ crcsim::simulate(
             n_individuals = n_individuals,
             n_covariates = n_covariates,
-            captures = captures
+            captures = captures,
+            cov_func = log_regress_covariates
         )
     )
 ))
