@@ -1,6 +1,7 @@
 # IDE Details
 .vscode/
 .Rproj.user/
+.quarto/
 
 *.csv
 *.png

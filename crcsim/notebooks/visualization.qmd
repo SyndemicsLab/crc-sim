@@ -1,0 +1,223 @@
+---
+title: "Simulation Results Visualization"
+author:
+    - name: "Matthew Carroll"
+---
+
+```{r}
+library(dplyr)
+library(purrr)
+library(ggplot2)
+```
+
+## Load Simulation Results
+
+```{r}
+result_files <- list.files(
+    file.path("data", "intercepts_and_regress_coefs"),
+    pattern = "^final_results_[-.0-9]+int_[-.0-9]+rc\\.csv$",
+    full.names = TRUE
+)
+```
+
+## Combine Results
+
+```{r}
+
+simulation_results <- map_dfr(result_files, function(file) {
+    scenario <- sub("^final_results_", "", basename(file))
+    scenario <- sub("\\.csv$", "", scenario)
+    parameters <- strcapture(
+        "^([-.0-9]+)int_([-.0-9]+)rc$",
+        scenario,
+        proto = list(intercept = numeric(), regression_coef = numeric())
+    )
+
+    read.csv(file) |>
+        mutate(
+            intercept = parameters$intercept,
+            regression_coef = parameters$regression_coef
+        )
+}) |>
+    mutate(
+        method = factor(method, levels = unique(method)),
+        intercept_label = factor(
+            sprintf("%.1f", intercept),
+            levels = sprintf("%.1f", sort(unique(intercept)))
+        ),
+        regression_coef_label = factor(
+            sprintf("%.1f", regression_coef),
+            levels = sprintf("%.1f", sort(unique(regression_coef)))
+        )
+    )
+```
+
+## Coverage
+
+Coverage is the proportion of simulation confidence intervals that contain the
+true relative bias of zero. The dashed contour marks nominal 95% coverage.
+
+```{r}
+coverage_plot <- ggplot(
+    simulation_results,
+    aes(x = intercept_label, y = method, fill = coverage)
+) +
+    geom_tile(color = "white", linewidth = 0.6) +
+    geom_text(aes(label = sprintf("%.0f%%", coverage * 100)), size = 3.2) +
+    facet_wrap(~regression_coef_label, nrow = 1) +
+    scale_fill_gradientn(
+        colors = c("#b2182b", "#fddbc7", "#d1e5f0", "#2166ac"),
+        limits = c(0, 1),
+        name = "Coverage"
+    ) +
+    labs(
+        title = "Confidence Interval Coverage by Simulation Scenario",
+        x = "Capture-probability intercept",
+        y = "Estimation method",
+        subtitle = "Facets show the covariate regression coefficient"
+    ) +
+    theme_minimal(base_size = 14) +
+    theme(
+        panel.grid = element_blank(),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        strip.text = element_text(size = 14, face = "bold"),
+        plot.title = element_text(size = 17, face = "bold"),
+        plot.subtitle = element_text(size = 13),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 13)
+    )
+
+coverage_plot
+```
+
+## Mean Estimates and Intervals
+
+Each point is a method's mean relative-bias estimate and each line spans the
+mean lower and upper confidence-interval endpoints across simulations. Panels
+use independent vertical scales so estimates near zero remain readable.
+
+```{r mean_estimates}
+interval_plot <- ggplot(
+    simulation_results,
+    aes(x = intercept_label, y = estimate, color = method)
+) +
+    geom_hline(yintercept = 0, color = "#003771", linetype = "dashed") +
+    geom_errorbar(
+        aes(ymin = lower_ci, ymax = upper_ci),
+        width = 0.18,
+        linewidth = 0.5
+    ) +
+    geom_point(size = 2) +
+    facet_grid(
+        regression_coef_label ~ method,
+        scales = "free_y",
+        labeller = label_both
+    ) +
+    labs(
+        title = "Mean Relative-Bias Estimates and Confidence Intervals",
+        x = "Capture-probability intercept",
+        y = "Mean relative bias",
+        caption = "The dashed horizontal line is the true relative bias (0)."
+    ) +
+    scale_color_manual(
+        values = c(
+            "AIC-Negbin" = "#003771",
+            "AIC-Poisson" = "#3d9be9",
+            "DR" = "#f0325f",
+            "PI" = "#1565a8",
+            "Stepwise-Negbin" = "#d51f49",
+            "Stepwise-Poisson" = "#6bb5ed",
+            "TMLE" = "#001f42"
+        )
+    ) +
+    theme_minimal(
+        base_size = 10,
+        base_family = "IBM Plex Sans"
+    ) +
+    theme(
+        plot.background = element_rect(fill = "#ffffff", color = NA),
+        panel.background = element_rect(fill = "#ffffff", color = NA),
+        legend.position = "none",
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title = element_text(family = "Helvetica"),
+        plot.title = element_text(
+            family = "Helvetica",
+            face = "bold",
+            size = 14
+        ),
+        strip.text = element_text(
+            family = "Helvetica",
+            face = "bold",
+            size = 8
+        )
+    )
+
+interval_plot
+```
+
+## Removed AIC-Poisson
+
+Because AIC-Poisson produces the largest CIs, we remove it from the plot to better visualize the other methods. The dashed contour marks nominal 95% coverage.
+
+```{r mean_estimates_no_aicp}
+interval_plot <- simulation_results |>
+    filter(method != "AIC-Poisson") |>
+    ggplot(
+        aes(x = intercept_label, y = estimate, color = method)
+    ) +
+    geom_hline(yintercept = 0, color = "#003771", linetype = "dashed") +
+    geom_errorbar(
+        aes(ymin = lower_ci, ymax = upper_ci),
+        width = 0.18,
+        linewidth = 0.5
+    ) +
+    geom_point(size = 2) +
+    facet_grid(
+        regression_coef_label ~ method,
+        scales = "free_y",
+        labeller = label_both
+    ) +
+    labs(
+        title = "Mean Relative-Bias Estimates and Confidence Intervals",
+        x = "Capture-probability intercept",
+        y = "Mean relative bias",
+        caption = "The dashed horizontal line is the true relative bias (0)."
+    ) +
+    scale_color_manual(
+        values = c(
+            "AIC-Negbin" = "#003771",
+            "DR" = "#f0325f",
+            "PI" = "#1565a8",
+            "Stepwise-Negbin" = "#d51f49",
+            "Stepwise-Poisson" = "#6bb5ed",
+            "TMLE" = "#001f42"
+        )
+    ) +
+    theme_minimal(
+        base_size = 10,
+        base_family = "IBM Plex Sans"
+    ) +
+    theme(
+        plot.background = element_rect(fill = "#ffffff", color = NA),
+        panel.background = element_rect(fill = "#ffffff", color = NA),
+        legend.position = "none",
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title = element_text(family = "Helvetica"),
+        plot.title = element_text(
+            family = "Helvetica",
+            face = "bold",
+            size = 14
+        ),
+        strip.text = element_text(
+            family = "Helvetica",
+            face = "bold",
+            size = 8
+        )
+    )
+
+interval_plot
+```
