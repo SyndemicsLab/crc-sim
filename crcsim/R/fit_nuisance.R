@@ -10,11 +10,98 @@
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
 ################################################################################
 
+#' Estimate nuisance parameters using the specified function.
+#'
+#' @param func The function to use for nuisance estimation.
+#' @param train The training dataset.
+#' @param test The testing dataset.
+#' @param n_lists The number of lists.
+#' @param j Index for the first variable.
+#' @param k Index for the second variable.
+#' @param margin The margin for estimation.
+#'
+#' @return Estimated nuisance parameters.
+#' @keywords internal
 nuisance_estimation <- function(func, train, test, n_lists, j, k, margin) {
     # Temporary implementation only using logit estimation
     return(qhat_logit(train, test, n_lists, j, k, margin))
 }
 
+
+#' Estimate the initial nuisance parameters using GLM fits on the training data
+#' and predict on the test data.
+#'
+#' @param train The training dataset.
+#' @param test The testing dataset.
+#' @param n_lists The number of lists.
+#' @param j Index for the first variable.
+#' @param k Index for the second variable.
+#' @param margin The margin for estimation.
+#'
+#' @return A list containing the initial estimates for q_1, q_2, and q_12.
+#' @keywords internal
+qhat_logit <- function(train, test, n_lists, j, k, margin) {
+    ## Template Functions for GLM and Q-function estimation
+    template_glm <- function(form) {
+        return(
+            try(glm(
+                form,
+                family = binomial(link = "logit"),
+                data = train[, c(j, k, (n_lists + 1):ncol(train))]
+            ))
+        )
+    }
+
+    template_q_j <- function(d_fit, q_12_offset = 0.0) {
+        return(pmin(
+            pmax(
+                q_12_offset + predict(d_fit, newdata = test, type = "response"),
+                margin
+            ),
+            1
+        ))
+    }
+
+    ## Core Functionality Start
+    c_names <- c(paste0("d", 1:n_lists), paste0("x", 1:(ncol(train) - n_lists)))
+    colnames(train) <- c_names
+    colnames(test) <- c_names
+
+    fit_j_0 <- template_glm(formula(paste0("d", j, "*(1 - d", k, ") ~.")))
+    fit_0_k <- template_glm(formula(paste0("d", k, "*(1 - d", j, ") ~.")))
+    fit_j_k <- template_glm(formula(paste0("d", j, "*d", k, " ~.")))
+
+    if (
+        inherits(fit_j_0, "try-error") ||
+            inherits(fit_0_k, "try-error") ||
+            inherits(fit_j_k, "try-error")
+    ) {
+        warning("One or more GLM fits failed.")
+        return(NULL)
+    }
+
+    q_12 <- template_q_j(fit_j_k)
+    q_1 <- template_q_j(fit_j_0, q_12_offset = q_12)
+    q_2 <- template_q_j(fit_0_k, q_12_offset = q_12)
+
+    return(list(q_1 = q_1, q_2 = q_2, q_12 = q_12))
+}
+
+#' Fit TMLE nuisance parameters. This updates the initial estimates using the
+#' TMLE procedure.
+#'
+#' @param q_1 Initial estimate for the first nuisance parameter.
+#' @param q_2 Initial estimate for the second nuisance parameter.
+#' @param q_12 Initial estimate for the joint nuisance parameter.
+#' @param y_j Observed outcome for the first variable.
+#' @param y_k Observed outcome for the second variable.
+#' @param y_jk Observed joint outcome for the first and second variables.
+#' @param iterations Maximum number of iterations for the TMLE update.
+#' @param margin Margin for estimation.
+#' @param n_lists Number of lists.
+#'
+#' @return Updated nuisance parameter estimates.
+#' @keywords internal
 tmle_nuisance <- function(
     q_1,
     q_2,
@@ -90,9 +177,6 @@ tmle_nuisance <- function(
         count <- count + 1
     }
 
-    ############################################################################
-    # Returns. Above is WIP
-    ############################################################################
     new_nuisances <- list(
         q_1 = q_10 + q_12,
         q_2 = q_02 + q_12,
@@ -101,6 +185,15 @@ tmle_nuisance <- function(
     return(new_nuisances)
 }
 
+#' Fit a GLM for TMLE updates.
+#'
+#' @param response The response variable.
+#' @param offset The offset for the GLM.
+#' @param ratio The ratio used as the predictor in the GLM.
+#'
+#' @return A list containing the fitted values and the maximum absolute
+#' coefficient value as the error.
+#' @keywords internal
 fit_glm_tmle <- function(response, offset, ratio) {
     complete <- stats::complete.cases(response, offset, ratio)
 
@@ -122,48 +215,4 @@ fit_glm_tmle <- function(response, offset, ratio) {
         value = fit$fitted.values,
         error = max(abs(stats::coef(fit)), na.rm = TRUE)
     ))
-}
-
-qhat_logit <- function(train, test, n_lists, j, k, margin) {
-    ## Template Functions for GLM and Q-function estimation
-    template_glm <- function(form) {
-        return(
-            try(glm(
-                form,
-                family = binomial(link = "logit"),
-                data = train[, c(j, k, (n_lists + 1):ncol(train))]
-            ))
-        )
-    }
-
-    template_q_j <- function(d_fit, q_12_offset = 0.0) {
-        return(pmax(
-            q_12_offset + predict(d_fit, newdata = test, type = "response"),
-            margin
-        ))
-    }
-
-    ## Core Functionality Start
-    c_names <- c(paste0("d", 1:n_lists), paste0("x", 1:(ncol(train) - n_list)))
-    colnames(train) <- c_names
-    colnames(test) <- c_names
-
-    fit_j_0 <- template_glm(formula(paste0("d", j, "*(1 - d", k, ") ~.")))
-    fit_0_k <- template_glm(formula(paste0("d", k, "*(1 - d", j, ") ~.")))
-    fit_j_k <- template_glm(formula(paste0("d", j, "*d", k, " ~.")))
-
-    if (
-        inherits(fit_j_0, "try-error") ||
-            inherits(fit_0_k, "try-error") ||
-            inherits(fit_j_k, "try-error")
-    ) {
-        warning("One or more GLM fits failed.")
-        return(NULL)
-    }
-
-    q_12 <- template_q_j(fit_j_k)
-    q_1 <- template_q_j(fit_j_0, q_12_offset = q_12)
-    q_2 <- template_q_j(fit_0_k, q_12_offset = q_12)
-
-    return(list(q_1 = q_1, q_2 = q_2, q_12 = q_12))
 }

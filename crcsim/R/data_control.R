@@ -4,7 +4,7 @@
 # Created Date: 2026-02-17                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-08-19                                                    #
+# Last Modified: 2026-08-28                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -251,9 +251,9 @@ suppress_data <- function(data, suppression_threshold, freq_col = "N_ID") {
     if (!is.numeric(data[[freq_col]])) {
         stop("Frequency column must be numeric")
     }
-    data <- dplyr::filter_out(
+    data <- dplyr::filter(
         data,
-        freq_col > 0 & freq_col <= suppression_threshold
+        .data[[freq_col]] > suppression_threshold
     )
     return(data)
 }

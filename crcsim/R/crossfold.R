@@ -65,11 +65,11 @@ run_fold <- function(
     margin,
     n_lists,
     n,
-    nuisance_estimation_func
+    func
 ) {
     train <- fold_split[["train"]]
     test <- fold_split[["test"]]
-    test_list_overlap(train[, j], train[, k], margin)
+    test_list_overlap(train[[j]], train[[k]], margin)
 
     nuisance_functions <- try(
         nuisance_estimation(func, train, test, n_lists, j, k, margin),
@@ -84,8 +84,8 @@ run_fold <- function(
     return(estimate_psi(
         method,
         nuisance_functions,
-        y_j = test[, j],
-        y_k = test[, k],
+        y_j = test[[j]],
+        y_k = test[[k]],
         margin = margin,
         n_lists = n_lists,
         n = n

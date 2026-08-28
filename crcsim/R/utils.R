@@ -41,9 +41,9 @@ test_list_overlap <- function(l1, l2, margin) {
     if (mean(l1 * l2) < margin) {
         warning(paste0(
             "Warning: Overlap between the lists ",
-            j,
+            l1,
             " and ",
-            k,
+            l2,
             " is less than ",
             margin,
             ".\n"

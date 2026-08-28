@@ -57,7 +57,15 @@ estimate_capture_prob <- function(
     if (n_covariates == 0) {
         return(estimate_no_covariates(data, n_lists))
     }
-    return(estimate_with_covariates(method, data, n_lists, func, seed))
+    return(estimate_with_covariates(
+        data,
+        n_lists,
+        method,
+        func,
+        nfolds,
+        margin,
+        seed
+    ))
 }
 
 
@@ -74,6 +82,7 @@ estimate_capture_prob <- function(
 #'
 #' @export
 estimate_no_covariates <- function(data, n_lists) {
+    n <- nrow(data)
     # revalidate that all columns are binary 0/1 values
     stopifnot(validate_binary_cols(data, n_lists))
 
@@ -87,9 +96,13 @@ estimate_no_covariates <- function(data, n_lists) {
         ) |>
         mutate(
             listpair = paste0(j, ",", k),
-            q1 = map2_dbl(j, k, ~ mean(data[[.x]])),
-            q2 = map2_dbl(j, k, ~ mean(data[[.y]])),
-            q12 = map2_dbl(j, k, ~ mean(data[[.x]] * data[[.y]])),
+            q1 = map2_dbl(j, k, ~ mean(data[[as.integer(.x)]])),
+            q2 = map2_dbl(j, k, ~ mean(data[[as.integer(.y)]])),
+            q12 = map2_dbl(
+                j,
+                k,
+                ~ mean(data[[as.integer(.x)]] * data[[as.integer(.y)]])
+            ),
             psi_inv = pmax(q1 * q2 / q12, 1),
             sigma = sqrt(
                 q1 * q2 * pmax(q1 * q2 - q12, 0) * (1 - q12) / q12^3 / n
@@ -129,10 +142,12 @@ estimate_no_covariates <- function(data, n_lists) {
 #'
 #' @export
 estimate_with_covariates <- function(
-    method,
     data,
     n_lists,
-    funcname,
+    method,
+    func,
+    nfolds,
+    margin,
     seed = NULL
 ) {
     ############################################################################
@@ -171,7 +186,7 @@ estimate_with_covariates <- function(
         margin = margin,
         n_lists = n_lists,
         n = n,
-        nuisance_estimation_func = funcname
+        func = func
     )
 
     estimates <- summaries |>
@@ -219,7 +234,7 @@ estimate_with_covariates <- function(
 #' @importFrom tibble tibble
 #' @keywords internal
 summarize_pair <- function(listpair, folds, ...) {
-    parts <- strsplit(listpair, ",", fixed = TRUE)[[1]]
+    parts <- as.integer(strsplit(listpair, ",", fixed = TRUE)[[1]])
 
     fold_results <- map(
         folds,
