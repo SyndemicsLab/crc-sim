@@ -4,7 +4,7 @@
 # Created Date: 2026-08-17                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-08-17                                                    #
+# Last Modified: 2026-08-26                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -44,6 +44,7 @@ simulate <- function(
 
     qhat <- popsize(
         data = sim_data,
+        K = length(captures),
         funcname = "logit",
         nfolds = 2,
         margin = 0.005

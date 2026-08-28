@@ -1,10 +1,10 @@
 ################################################################################
 # File: row_level_estimation.R                                                 #
-# Project: crc-sim                                                             #
+# Project: crcsim                                                              #
 # Created Date: 2026-05-15                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-16                                                    #
+# Last Modified: 2026-08-28                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -57,20 +57,17 @@ row_level_estimation <- function(data, opts) {
     sim_data <- data |>
         all_int_cols_to_numeric() |>
         extract_captured_data(capture_columns)
-    n_folds <- opts[["nfolds"]]
-    funcname <- opts[["model"]]
-    margin <- opts[["threshold"]]
-    qhat <- drpop::popsize(
-        data = sim_data,
-        funcname = funcname,
-        nfolds = n_folds,
-        margin = margin
+
+    n <- nrow(sim_data)
+
+    estimates <- estimate_capture_prob(
+        sim_data,
+        length(capture_columns),
+        method = opts[["model"]],
+        func = opts[["nusiance_function"]],
+        nfolds = opts[["nfolds"]],
+        margin = opts[["threshold"]]
     )
 
-    psin_estimates <- drpop::popsize(
-        data = sim_data,
-        getnuis = qhat[["nuis"]],
-        idfold = qhat[["idfold"]]
-    )
-    return(psin_estimates)
+    return(estimates)
 }

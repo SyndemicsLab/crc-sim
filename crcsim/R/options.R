@@ -1,10 +1,10 @@
 ################################################################################
 # File: options.R                                                              #
-# Project: crc-sim                                                             #
+# Project: crcsim                                                              #
 # Created Date: 2026-05-15                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-16                                                    #
+# Last Modified: 2026-08-28                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -278,45 +278,48 @@ AICOptions <- R6::R6Class( # nolint: object_name_linter
 #' selection method in CRC. It inherits from the base Options class and
 #' includes additional parameters specific to the plugin method.
 #'
-#' @param list_pair A vector of two column names in the data that indicate the
-#' two capture lists to be used for the plugin estimator.
+#' @param nuisance_function Character scalar identifying the function to use to
+#' estimate nuisance parameters.
 #' @param nfolds The number of folds to use for cross-validation when fitting
 #' the plugin estimator model.
-#' @param estimator Character scalar naming the plugin estimator implementation.
+#'
 #' @export
 # fmt: skip
 EstimatorOptions <- R6::R6Class( # nolint: object_name_linter
     "EstimatorOptions",
     inherit = Options,
     public = list(
-        #' @field list_pair Character vector of length two naming the capture
-        #' lists used by the plugin estimator.
-        list_pair = NULL,
+        #' @field nuisance_function Character scalar identifying the function
+        #' to use to estimate nuisance parameters.
+        nusiance_function = NULL,
         #' @field nfolds Integer scalar giving the number of cross-validation
         #' folds.
         nfolds = NULL,
 
         #' @description Create a new \\code{EstimatorOptions} instance.
-        #' @param model Character scalar identifying the model family.
-        #' @param threshold Numeric scalar giving the threshold applied by
-        #' threshold-based selection methods.
-        #' @param list_pair Character vector of length two naming the capture
-        #' lists used by the plugin estimator.
-        #' @param nfolds Integer scalar giving the number of cross-validation
-        #' folds.
+        #'
+        #' @param estimation_method Character scalar naming the estimation
+        #' method to be used.
         #' @param capture_columns Character vector naming the binary capture
         #' indicator columns. If NULL, all binary columns will be assumed to be
         #' capture indicators.
+        #' @param threshold Numeric scalar giving the threshold applied by
+        #' threshold-based selection methods.
+        #' @param nusiance_function Character scalar identifying the function
+        #' to use to estimate nuisance parameters.
+        #' @param nfolds Integer scalar giving the number of cross-validation
+        #' folds.
+        #'
         #' @return The initialized \\code{EstimatorOptions} object.
         initialize = function(
-            model,
+            method,
             capture_columns,
             threshold,
-            list_pair,
+            nusiance_function,
             nfolds
         ) {
-            super$initialize(model, capture_columns, threshold)
-            self$list_pair <- list_pair
+            super$initialize(method, capture_columns, threshold)
+            self$nusiance_function <- nusiance_function
             self$nfolds <- nfolds
             return(self)
         }

@@ -14,11 +14,19 @@ includes additional parameters specific to the plugin method.
 \section{Public fields}{
   \if{html}{\out{<div class="r6-fields">}}
   \describe{
-    \item{\code{list_pair}}{Character vector of length two naming the capture
-lists used by the plugin estimator.}
+    \item{\code{nuisance_function}}{Character scalar identifying the function
+to use to estimate nuisance parameters.}
 
     \item{\code{nfolds}}{Integer scalar giving the number of cross-validation
 folds.}
+  }
+  \if{html}{\out{</div>}}
+}
+\section{Active bindings}{
+  \if{html}{\out{<div class="r6-active-bindings">}}
+  \describe{
+    \item{\code{nuisance_function}}{Character scalar identifying the function
+to use to estimate nuisance parameters.}
   }
   \if{html}{\out{</div>}}
 }
@@ -36,22 +44,29 @@ folds.}
   Create a new \\code{EstimatorOptions} instance.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
-    \preformatted{EstimatorOptions$new(model, capture_columns, threshold, list_pair, nfolds)}
+    \preformatted{EstimatorOptions$new(
+  method,
+  capture_columns,
+  threshold,
+  nusiance_function,
+  nfolds
+)}
     \if{html}{\out{</div>}}
   }
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{model}}{Character scalar identifying the model family.}
       \item{\code{capture_columns}}{Character vector naming the binary capture
 indicator columns. If NULL, all binary columns will be assumed to be
 capture indicators.}
       \item{\code{threshold}}{Numeric scalar giving the threshold applied by
 threshold-based selection methods.}
-      \item{\code{list_pair}}{Character vector of length two naming the capture
-lists used by the plugin estimator.}
+      \item{\code{nusiance_function}}{Character scalar identifying the function
+to use to estimate nuisance parameters.}
       \item{\code{nfolds}}{Integer scalar giving the number of cross-validation
 folds.}
+      \item{\code{estimation_method}}{Character scalar naming the estimation
+method to be used.}
     }
     \if{html}{\out{</div>}}
   }
