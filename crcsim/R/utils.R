@@ -20,6 +20,10 @@
 #' @importFrom dplyr filter mutate pull
 #' @export
 build_listpairs <- function(n_lists) {
+    if (n_lists < 2) {
+        return(character())
+    }
+
     list1_vec <- 1:(n_lists - 1)
     list2_vec <- 1:n_lists
     result <- tidyr::expand_grid(j1 = list1_vec, k1 = list2_vec) |>
@@ -63,7 +67,7 @@ test_list_overlap <- function(l1, l2, margin) {
 #' @keywords internal
 validate_binary_cols <- function(data, end, start = 1) {
     zero_one_check <- apply(
-        data[, start:end],
+        data[, start:end, drop = FALSE],
         2,
         function(x) all(x %in% c(0, 1))
     )
