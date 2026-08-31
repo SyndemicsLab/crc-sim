@@ -15,8 +15,6 @@ covariate data.}
 \value{
 A data frame with n_individuals rows and n_covariates columns, where
 each column represents a covariate and each row represents an individual.
-
-importFrom stats rbinom setNames
 }
 \description{
 This function generates a data frame containing binary

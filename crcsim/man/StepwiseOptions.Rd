@@ -39,7 +39,7 @@ interactions to include in the search.}
 \if{html}{\out{<a id="method-StepwiseOptions-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-StepwiseOptions-initialize}{}}}
 \subsection{\code{StepwiseOptions$new()}}{
-  Create a new \\code{StepwiseOptions} instance.
+  Create a new \code{StepwiseOptions} instance.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{StepwiseOptions$new(
@@ -74,7 +74,7 @@ indicator columns.}
     \if{html}{\out{</div>}}
   }
   \subsection{Returns}{
-    The initialized \\code{StepwiseOptions} object.
+    The initialized \code{StepwiseOptions} object.
   }
 }
 

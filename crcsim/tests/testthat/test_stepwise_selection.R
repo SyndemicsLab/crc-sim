@@ -356,7 +356,10 @@ test_that("forward direction with negbin model", {
         direction = "forward"
     )
 
-    result <- stepwise_selection(model_data, opts)
+    expect_warning(
+        result <- stepwise_selection(model_data, opts),
+        "alternation limit reached"
+    )
 
     expect_equal(result$model, "negbin")
     expect_false(is.na(result$AIC))
@@ -369,7 +372,10 @@ test_that("backward direction with negbin model", {
         direction = "backward"
     )
 
-    result <- stepwise_selection(model_data, opts)
+    expect_warning(
+        result <- stepwise_selection(model_data, opts),
+        "alternation limit reached"
+    )
 
     expect_equal(result$model, "negbin")
     expect_false(is.na(result$AIC))

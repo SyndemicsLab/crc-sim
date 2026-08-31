@@ -4,7 +4,7 @@
 # Created Date: 2026-05-15                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-08-28                                                    #
+# Last Modified: 2026-08-31                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -25,13 +25,12 @@
 #' include "logit", "ranger", and "gam".
 #'
 #' @param data a data frame containing the capture data. All columns must be
-#' numeric type as long as we use the \code{drpop} package.
+#' numeric type.
 #' @param opts a \code{EstimatorOptions} object specifying the plugin method and
 #'  parameters for the TMLE estimation.
 #' @returns a list containing the estimate of population size and
 #' confidence intervals.
 #'
-#' @importFrom drpop popsize
 #' @export
 row_level_estimation <- function(data, opts) {
     if (!inherits(opts, "EstimatorOptions")) {
@@ -64,7 +63,7 @@ row_level_estimation <- function(data, opts) {
         sim_data,
         length(capture_columns),
         method = opts[["model"]],
-        func = opts[["nusiance_function"]],
+        func = opts[["nuisance_function"]],
         nfolds = opts[["nfolds"]],
         margin = opts[["threshold"]]
     )

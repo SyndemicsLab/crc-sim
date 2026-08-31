@@ -36,7 +36,7 @@ selection.}
 \if{html}{\out{<a id="method-Options-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-Options-initialize}{}}}
 \subsection{\code{Options$new()}}{
-  Create a new \\code{Options} instance.
+  Create a new \code{Options} instance.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{Options$new(model, capture_columns, threshold)}
@@ -56,7 +56,7 @@ selection.}
     \if{html}{\out{</div>}}
   }
   \subsection{Returns}{
-    The initialized \\code{Options} object.
+    The initialized \code{Options} object.
   }
 }
 

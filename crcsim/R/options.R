@@ -4,7 +4,7 @@
 # Created Date: 2026-05-15                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-08-28                                                    #
+# Last Modified: 2026-08-31                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -42,13 +42,13 @@ Options <- R6::R6Class( # nolint: object_name_linter
         #' selection.
         threshold = NULL,
 
-        #' @description Create a new \\code{Options} instance.
+        #' @description Create a new \code{Options} instance.
         #' @param model Character scalar identifying either the log-linear
         #' model or the nuisance function to utilize.
         #' @param threshold Numeric scalar giving the threshold applied by
         #' threshold-based selection methods or the margin desired by stepwise
         #' selection.
-        #' @return The initialized \\code{Options} object.
+        #' @return The initialized \code{Options} object.
         initialize = function(model, capture_columns, threshold) {
             self$model <- model
             self$capture_columns <- capture_columns
@@ -78,7 +78,7 @@ FrequencyOptions <- R6::R6Class( # nolint: object_name_linter
         #' column.
         frequency_col_name = NULL,
 
-        #' @description Create a new \\code{FrequencyOptions} instance.
+        #' @description Create a new \code{FrequencyOptions} instance.
         #' @param model Character scalar identifying the model family.
         #' @param threshold Numeric scalar giving the threshold applied by
         #' threshold-based selection methods.
@@ -86,7 +86,7 @@ FrequencyOptions <- R6::R6Class( # nolint: object_name_linter
         #' initialize the object.
         #' @param frequency_col_name Character scalar naming the frequency
         #' column in the aggregated CRC data.
-        #' @return The initialized \\code{FrequencyOptions} object.
+        #' @return The initialized \code{FrequencyOptions} object.
         initialize = function(
             model,
             capture_columns,
@@ -100,9 +100,9 @@ FrequencyOptions <- R6::R6Class( # nolint: object_name_linter
             return(self)
         },
 
-        #' @description Append a single formula to \\code{self$formulas}.
+        #' @description Append a single formula to \code{self$formulas}.
         #' @param formula A formula object to append.
-        #' @return The updated \\code{FrequencyOptions} object.
+        #' @return The updated \code{FrequencyOptions} object.
         add_formula = function(formula) {
             if (is.null(self$formulas)) {
                 self$formulas <- formula
@@ -112,9 +112,9 @@ FrequencyOptions <- R6::R6Class( # nolint: object_name_linter
             return(self)
         },
 
-        #' @description Append multiple formulas to \\code{self$formulas}.
+        #' @description Append multiple formulas to \code{self$formulas}.
         #' @param formula_list A list of formula objects to append.
-        #' @return The updated \\code{FrequencyOptions} object.
+        #' @return The updated \code{FrequencyOptions} object.
         add_formulas = function(formula_list) {
             if (is.null(self$formulas)) {
                 self$formulas <- formula_list
@@ -153,7 +153,7 @@ StepwiseOptions <- R6::R6Class( # nolint: object_name_linter
         #' interactions to include in the search.
         interaction_limit = 2,
 
-        #' @description Create a new \\code{StepwiseOptions} instance.
+        #' @description Create a new \code{StepwiseOptions} instance.
         #' @param model Character scalar identifying the model family.
         #' @param threshold Numeric scalar giving the stepwise inclusion
         #' threshold.
@@ -165,7 +165,7 @@ StepwiseOptions <- R6::R6Class( # nolint: object_name_linter
         #' indicator columns.
         #' @param interaction_limit Integer scalar giving the maximum order of
         #' interactions to include in the search.
-        #' @return The initialized \\code{StepwiseOptions} object.
+        #' @return The initialized \code{StepwiseOptions} object.
         initialize = function(
             model,
             capture_columns,
@@ -210,7 +210,7 @@ AICOptions <- R6::R6Class( # nolint: object_name_linter
         #' @field formulas Formula object or collection of formulas evaluated by
         #' the AIC-based selection routine.
         formulas = NULL,
-        #' @description Create a new \\code{AICOptions} instance.
+        #' @description Create a new \code{AICOptions} instance.
         #' @param model Character scalar identifying the model family.
         #' @param formula Optional formula object to evaluate directly.
         #' @param frequency_col_name Character scalar naming the frequency
@@ -218,7 +218,7 @@ AICOptions <- R6::R6Class( # nolint: object_name_linter
         #' in the aggregated CRC data.
         #' @param capture_indicators Character vector naming the capture history
         #' indicator columns.
-        #' @return The initialized \\code{AICOptions} object.
+        #' @return The initialized \code{AICOptions} object.
         initialize = function(
             model,
             capture_columns = NULL,
@@ -244,7 +244,7 @@ AICOptions <- R6::R6Class( # nolint: object_name_linter
         # Note: These are not Roxygen2 comments because it errors on private
         # members of classes being commented
         # @description Validate or generate the formula input used by
-        # \\code{AICOptions}.
+        # \code{AICOptions}.
         # @param freq_column Character scalar naming the frequency column in
         # the aggregated CRC data.
         # @param binary_variables Character vector naming the binary capture
@@ -291,35 +291,35 @@ EstimatorOptions <- R6::R6Class( # nolint: object_name_linter
     public = list(
         #' @field nuisance_function Character scalar identifying the function
         #' to use to estimate nuisance parameters.
-        nusiance_function = NULL,
+        nuisance_function = NULL,
         #' @field nfolds Integer scalar giving the number of cross-validation
         #' folds.
         nfolds = NULL,
 
-        #' @description Create a new \\code{EstimatorOptions} instance.
+        #' @description Create a new \code{EstimatorOptions} instance.
         #'
-        #' @param estimation_method Character scalar naming the estimation
+        #' @param method Character scalar naming the estimation
         #' method to be used.
         #' @param capture_columns Character vector naming the binary capture
         #' indicator columns. If NULL, all binary columns will be assumed to be
         #' capture indicators.
         #' @param threshold Numeric scalar giving the threshold applied by
         #' threshold-based selection methods.
-        #' @param nusiance_function Character scalar identifying the function
+        #' @param nuisance_function Character scalar identifying the function
         #' to use to estimate nuisance parameters.
         #' @param nfolds Integer scalar giving the number of cross-validation
         #' folds.
         #'
-        #' @return The initialized \\code{EstimatorOptions} object.
+        #' @return The initialized \code{EstimatorOptions} object.
         initialize = function(
             method,
             capture_columns,
             threshold,
-            nusiance_function,
+            nuisance_function,
             nfolds
         ) {
             super$initialize(method, capture_columns, threshold)
-            self$nusiance_function <- nusiance_function
+            self$nuisance_function <- nuisance_function
             self$nfolds <- nfolds
             return(self)
         }

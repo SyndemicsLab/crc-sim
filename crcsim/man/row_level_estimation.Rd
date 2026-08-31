@@ -8,7 +8,7 @@ row_level_estimation(data, opts)
 }
 \arguments{
 \item{data}{a data frame containing the capture data. All columns must be
-numeric type as long as we use the \code{drpop} package.}
+numeric type.}
 
 \item{opts}{a \code{EstimatorOptions} object specifying the plugin method and
 parameters for the TMLE estimation.}

@@ -4,7 +4,7 @@
 # Created Date: 2026-02-17                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-08-28                                                    #
+# Last Modified: 2026-08-31                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -130,6 +130,8 @@ sample_captures <- function(
 #' represents a capture event. The values are binary (0 or 1), indicating
 #' whether an individual was captured (1) or not (0) for each capture event,
 #' based on the covariate values in the input data frame.
+#'
+#' @importFrom stats rbinom
 #' @export
 captures_from_covariates <- function(
     data_table,
@@ -166,7 +168,7 @@ captures_from_covariates <- function(
     capture_cols <- paste0("capture_", seq_len(n_cols))
     for (col in capture_cols) {
         if (!col %in% colnames(data_table)) {
-            data_table[[col]] <- as.integer(stats::rbinom(
+            data_table[[col]] <- as.integer(rbinom(
                 n = nrow(data_table),
                 size = 1,
                 prob = capture_prob
@@ -216,7 +218,7 @@ covariate_conditions <- function(data_table, intercept = 1) {
 #' @keywords internal
 sample_single_capture <- function(capture_probs) {
     n <- length(capture_probs)
-    out <- as.integer(stats::rbinom(n = n, size = 1, prob = capture_probs))
+    out <- as.integer(rbinom(n = n, size = 1, prob = capture_probs))
     return(out)
 }
 
@@ -395,9 +397,7 @@ is_frequency_table <- function(data, frequency_column) {
 }
 
 #' A function used to convert all integer columns to numeric. This is necessary
-#' as the drpop package requires all data columns to be numerics.
-#' This is a temporary workaround until we can implement our own TMLE estimation
-#' function that can handle integer columns.
+#' as the estimation functions require numeric data columns.
 #'
 #' @param df a data frame
 #' @returns a data frame with all integer columns converted to numeric
@@ -629,14 +629,12 @@ create_individual_record <- function(index, capture_probs, covariate_specs) {
 #' @noRd
 create_capture <- function(prob) {
     n <- length(prob)
-    out <- as.integer(stats::rbinom(n = n, size = 1, prob = prob))
+    out <- as.integer(rbinom(n = n, size = 1, prob = prob))
     names(out) <- paste0("capture_", 1:n)
     return(out)
 }
 
 #' Sample numerical covariate values for one individual
-#'
-#' @importFrom stats runif rnorm
 #'
 #' @keywords internal
 #' @noRd
@@ -681,9 +679,9 @@ sample_covariate_value <- function(covariate_spec_row) {
     dtype <- covariate_spec_row[["dtype"]][[1]]
 
     if (distribution == "uniform") {
-        value <- stats::runif(n = 1, min = p1, max = p2)
+        value <- runif(n = 1, min = p1, max = p2)
     } else if (distribution == "normal") {
-        value <- stats::rnorm(n = 1, mean = p1, sd = p2)
+        value <- rnorm(n = 1, mean = p1, sd = p2)
     } else {
         stop("Unsupported distribution in covariate specification")
     }

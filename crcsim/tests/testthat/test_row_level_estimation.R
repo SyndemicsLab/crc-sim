@@ -17,7 +17,7 @@ make_estimator_options <- function(
         method = "plugin",
         capture_columns = capture_columns,
         threshold = 0.01,
-        nusiance_function = "logit",
+        nuisance_function = "logit",
         nfolds = 1
     )
     return(estimator_options)

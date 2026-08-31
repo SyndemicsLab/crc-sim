@@ -51,7 +51,7 @@ make_crc_estimator_options <- function() {
         method = "plugin",
         capture_columns = c("capture_1", "capture_2"),
         threshold = 0.01,
-        nusiance_function = "logit",
+        nuisance_function = "logit",
         nfolds = 1
     )
     return(estimator_options)

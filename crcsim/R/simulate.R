@@ -4,7 +4,7 @@
 # Created Date: 2026-08-17                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-08-26                                                    #
+# Last Modified: 2026-08-31                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -18,8 +18,7 @@
 #' @param captures the captures that accompany each covariate.
 #' @return The results of the CRC Simulation
 #'
-#' @importFrom dplyr select rename mutate
-#' @importFrom drpop popsize
+#' @importFrom dplyr select rename mutate starts_with
 #' @export
 simulate <- function(
     n_individuals,
@@ -42,28 +41,34 @@ simulate <- function(
     known_pop_size <- nrow(sim_data)
     unknown_pop_size <- n_individuals - known_pop_size
 
-    qhat <- popsize(
-        data = sim_data,
-        K = length(captures),
-        funcname = "logit",
-        nfolds = 2,
-        margin = 0.005
+    internal_estimates <- lapply(
+        c("plugin", "doubly_robust", "tmle"),
+        function(method) {
+            estimate <- estimate_capture_prob(
+                data = sim_data,
+                n_lists = length(captures),
+                method = method,
+                func = "logit",
+                nfolds = 2,
+                margin = 0.005,
+                seed = 1
+            )
+            return(estimate)
+        }
     )
 
-    psin_estimates <- popsize(
-        data = sim_data,
-        getnuis = qhat$nuis,
-        idfold = qhat$idfold
-    )$result
-
-    drpop_df <- select(
-        psin_estimates,
-        c("method", "n", "cin.l", "cin.u")
-    ) |>
+    internal_df <- bind_rows(internal_estimates) |>
+        mutate(
+            method = rep(
+                c("PI", "DR", "TMLE"),
+                vapply(internal_estimates, nrow, integer(1))
+            ),
+            lower_ci = ci_l,
+            upper_ci = ci_u
+        ) |>
+        select(method, n, lower_ci, upper_ci) |>
         rename(
-            estimate = n,
-            lower_ci = cin.l,
-            upper_ci = cin.u
+            estimate = n
         ) |>
         mutate(
             estimate = ((estimate - n_individuals) / n_individuals) * 100,
@@ -164,5 +169,5 @@ simulate <- function(
     # nolint end: indentation_linter
 
     combo <- bind_rows(selection_df, selection_nb_df)
-    return(bind_rows(drpop_df, combo))
+    return(bind_rows(internal_df, combo))
 }

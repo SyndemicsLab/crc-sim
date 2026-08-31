@@ -22,14 +22,6 @@ folds.}
   }
   \if{html}{\out{</div>}}
 }
-\section{Active bindings}{
-  \if{html}{\out{<div class="r6-active-bindings">}}
-  \describe{
-    \item{\code{nuisance_function}}{Character scalar identifying the function
-to use to estimate nuisance parameters.}
-  }
-  \if{html}{\out{</div>}}
-}
 \section{Methods}{
 \subsection{Public methods}{
   \itemize{
@@ -41,14 +33,14 @@ to use to estimate nuisance parameters.}
 \if{html}{\out{<a id="method-EstimatorOptions-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-EstimatorOptions-initialize}{}}}
 \subsection{\code{EstimatorOptions$new()}}{
-  Create a new \\code{EstimatorOptions} instance.
+  Create a new \code{EstimatorOptions} instance.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{EstimatorOptions$new(
   method,
   capture_columns,
   threshold,
-  nusiance_function,
+  nuisance_function,
   nfolds
 )}
     \if{html}{\out{</div>}}
@@ -56,22 +48,22 @@ to use to estimate nuisance parameters.}
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
+      \item{\code{method}}{Character scalar naming the estimation
+method to be used.}
       \item{\code{capture_columns}}{Character vector naming the binary capture
 indicator columns. If NULL, all binary columns will be assumed to be
 capture indicators.}
       \item{\code{threshold}}{Numeric scalar giving the threshold applied by
 threshold-based selection methods.}
-      \item{\code{nusiance_function}}{Character scalar identifying the function
+      \item{\code{nuisance_function}}{Character scalar identifying the function
 to use to estimate nuisance parameters.}
       \item{\code{nfolds}}{Integer scalar giving the number of cross-validation
 folds.}
-      \item{\code{estimation_method}}{Character scalar naming the estimation
-method to be used.}
     }
     \if{html}{\out{</div>}}
   }
   \subsection{Returns}{
-    The initialized \\code{EstimatorOptions} object.
+    The initialized \code{EstimatorOptions} object.
   }
 }
 

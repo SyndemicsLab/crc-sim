@@ -88,21 +88,55 @@ step_regression <- function(
         ")^",
         k
     ))
-    model <- fit_loglinear_model(model_data, formula_init, model_family)
+    model <- tryCatch(
+        fit_loglinear_model(model_data, formula_init, model_family),
+        error = function(error) {
+            warning(
+                sprintf(
+                    "Stepwise %s model did not converge: %s",
+                    model_family,
+                    conditionMessage(error)
+                ),
+                call. = FALSE
+            )
+            return(NULL)
+        }
+    )
+
+    if (is.null(model)) {
+        return(stepwise_failure_result(model_family, formula_init))
+    }
 
     # Step function is obnoxious, so we turn off the messages. This requires
     # linter adjustment
     # nolint start: implicit_assignment_linter
-    suppressMessages(
-        final_model <- step(
-            model,
-            scope = list(upper = formula_max, lower = formula_init),
-            direction = direction,
-            k = log(nrow(model_data)),
-            trace = as.integer(verbose)
-        )
+    final_model <- tryCatch(
+        suppressMessages(
+            step(
+                model,
+                scope = list(upper = formula_max, lower = formula_init),
+                direction = direction,
+                k = log(nrow(model_data)),
+                trace = as.integer(verbose)
+            )
+        ),
+        error = function(error) {
+            warning(
+                sprintf(
+                    "Stepwise %s model selection did not converge: %s",
+                    model_family,
+                    conditionMessage(error)
+                ),
+                call. = FALSE
+            )
+            return(NULL)
+        }
     )
     # nolint end: implicit_assignment_linter
+
+    if (is.null(final_model)) {
+        return(stepwise_failure_result(model_family, formula_init))
+    }
 
     intercept <- coef(final_model)[1]
     estimate <- exp(intercept)
@@ -125,4 +159,16 @@ step_regression <- function(
     )
 
     return(results)
+}
+
+stepwise_failure_result <- function(model_family, formula_init) {
+    return(list(
+        model = model_family,
+        formula = formula_init,
+        summary = NULL,
+        estimate = NA_real_,
+        lower_ci = NA_real_,
+        upper_ci = NA_real_,
+        AIC = NA_real_
+    ))
 }

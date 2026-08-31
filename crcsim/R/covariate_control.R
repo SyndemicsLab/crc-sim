@@ -4,7 +4,7 @@
 # Created Date: 2026-07-29                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-08-28                                                    #
+# Last Modified: 2026-08-31                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -22,7 +22,7 @@
 #' @return A data frame with n_individuals rows and n_covariates columns, where
 #' each column represents a covariate and each row represents an individual.
 #'
-#' importFrom stats rbinom setNames
+#' @importFrom stats rbinom setNames
 #' @export
 build_covariate_data <- function(n_individuals, n_covariates) {
     if (n_covariates == 0) {

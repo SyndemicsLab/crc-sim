@@ -3,9 +3,7 @@
 \name{all_int_cols_to_numeric}
 \alias{all_int_cols_to_numeric}
 \title{A function used to convert all integer columns to numeric. This is necessary
-as the drpop package requires all data columns to be numerics.
-This is a temporary workaround until we can implement our own TMLE estimation
-function that can handle integer columns.}
+as the estimation functions require numeric data columns.}
 \usage{
 all_int_cols_to_numeric(df)
 }
@@ -17,8 +15,6 @@ a data frame with all integer columns converted to numeric
 }
 \description{
 A function used to convert all integer columns to numeric. This is necessary
-as the drpop package requires all data columns to be numerics.
-This is a temporary workaround until we can implement our own TMLE estimation
-function that can handle integer columns.
+as the estimation functions require numeric data columns.
 }
 \keyword{internal}

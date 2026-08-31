@@ -36,7 +36,7 @@ the AIC-based selection routine.}
 \if{html}{\out{<a id="method-AICOptions-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-AICOptions-initialize}{}}}
 \subsection{\code{AICOptions$new()}}{
-  Create a new \\code{AICOptions} instance.
+  Create a new \code{AICOptions} instance.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{AICOptions$new(
@@ -63,7 +63,7 @@ indicator columns.}
     \if{html}{\out{</div>}}
   }
   \subsection{Returns}{
-    The initialized \\code{AICOptions} object.
+    The initialized \code{AICOptions} object.
   }
 }
 

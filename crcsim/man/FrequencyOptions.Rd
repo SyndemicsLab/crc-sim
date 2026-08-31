@@ -35,7 +35,7 @@ column.}
 \if{html}{\out{<a id="method-FrequencyOptions-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-FrequencyOptions-initialize}{}}}
 \subsection{\code{FrequencyOptions$new()}}{
-  Create a new \\code{FrequencyOptions} instance.
+  Create a new \code{FrequencyOptions} instance.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{FrequencyOptions$new(
@@ -63,7 +63,7 @@ column in the aggregated CRC data.}
     \if{html}{\out{</div>}}
   }
   \subsection{Returns}{
-    The initialized \\code{FrequencyOptions} object.
+    The initialized \code{FrequencyOptions} object.
   }
 }
 
@@ -71,7 +71,7 @@ column in the aggregated CRC data.}
 \if{html}{\out{<a id="method-FrequencyOptions-add_formula"></a>}}
 \if{latex}{\out{\hypertarget{method-FrequencyOptions-add_formula}{}}}
 \subsection{\code{FrequencyOptions$add_formula()}}{
-  Append a single formula to \\code{self$formulas}.
+  Append a single formula to \code{self$formulas}.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{FrequencyOptions$add_formula(formula)}
@@ -85,7 +85,7 @@ column in the aggregated CRC data.}
     \if{html}{\out{</div>}}
   }
   \subsection{Returns}{
-    The updated \\code{FrequencyOptions} object.
+    The updated \code{FrequencyOptions} object.
   }
 }
 
@@ -93,7 +93,7 @@ column in the aggregated CRC data.}
 \if{html}{\out{<a id="method-FrequencyOptions-add_formulas"></a>}}
 \if{latex}{\out{\hypertarget{method-FrequencyOptions-add_formulas}{}}}
 \subsection{\code{FrequencyOptions$add_formulas()}}{
-  Append multiple formulas to \\code{self$formulas}.
+  Append multiple formulas to \code{self$formulas}.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{FrequencyOptions$add_formulas(formula_list)}
@@ -107,7 +107,7 @@ column in the aggregated CRC data.}
     \if{html}{\out{</div>}}
   }
   \subsection{Returns}{
-    The updated \\code{FrequencyOptions} object.
+    The updated \code{FrequencyOptions} object.
   }
 }
 

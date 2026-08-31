@@ -4,7 +4,7 @@
 # Created Date: 2026-08-27                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-08-28                                                    #
+# Last Modified: 2026-08-31                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -38,6 +38,7 @@ nuisance_estimation <- function(func, train, test, n_lists, j, k, margin) {
 #' @param k Index for the second variable.
 #' @param margin The margin for estimation.
 #'
+#' @importFrom stats predict glm binomial
 #' @return A list containing the initial estimates for q_1, q_2, and q_12.
 #' @keywords internal
 qhat_logit <- function(train, test, n_lists, j, k, margin) {
@@ -193,16 +194,18 @@ tmle_nuisance <- function(
 #'
 #' @return A list containing the fitted values and the maximum absolute
 #' coefficient value as the error.
+#'
+#' @importFrom stats complete.cases glm.fit coef binomial
 #' @keywords internal
 fit_glm_tmle <- function(response, offset, ratio) {
-    complete <- stats::complete.cases(response, offset, ratio)
+    complete <- complete.cases(response, offset, ratio)
 
     fit <- try(
-        stats::glm.fit(
+        glm.fit(
             x = matrix(ratio[complete], ncol = 1),
             y = response[complete],
             offset = offset[complete],
-            family = stats::binomial(link = "logit")
+            family = binomial(link = "logit")
         ),
         silent = TRUE
     )
@@ -213,6 +216,6 @@ fit_glm_tmle <- function(response, offset, ratio) {
 
     return(list(
         value = fit$fitted.values,
-        error = max(abs(stats::coef(fit)), na.rm = TRUE)
+        error = max(abs(coef(fit)), na.rm = TRUE)
     ))
 }

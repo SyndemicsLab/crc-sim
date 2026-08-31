@@ -1,10 +1,10 @@
 ################################################################################
 # File: test_options.R                                                         #
-# Project: crc-sim                                                             #
+# Project: crcsim                                                              #
 # Created Date: 2026-05-15                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-16                                                    #
+# Last Modified: 2026-08-31                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -159,7 +159,7 @@ test_that(
             method = "logit",
             capture_columns = c("list_A", "list_B"),
             threshold = 0.10,
-            nusiance_function = "logit",
+            nuisance_function = "logit",
             nfolds = 5
         )
 
@@ -168,7 +168,7 @@ test_that(
         expect_equal(opts$threshold, 0.10)
 
         # Check EstimatorOptions-specific fields
-        expect_equal(opts$nusiance_function, "logit")
+        expect_equal(opts$nuisance_function, "logit")
         expect_equal(opts$nfolds, 5)
     }
 )
@@ -213,7 +213,7 @@ test_that(
             method = "logit",
             capture_columns = c("list_A", "list_B"),
             threshold = 0.10,
-            nusiance_function = "logit",
+            nuisance_function = "logit",
             nfolds = 5
         )
 
@@ -307,21 +307,21 @@ test_that(
             method = "logit",
             capture_columns = c("list_A", "list_B"),
             threshold = 0.10,
-            nusiance_function = "logit",
+            nuisance_function = "logit",
             nfolds = 5
         )
         result <- opts$initialize(
             method = "gam",
             capture_columns = c("L1", "L2"),
             threshold = 0.15,
-            nusiance_function = "gam",
+            nuisance_function = "gam",
             nfolds = 10
         )
 
         expect_identical(result, opts)
         expect_equal(opts$model, "gam")
         expect_equal(opts$threshold, 0.15)
-        expect_equal(opts$nusiance_function, "gam")
+        expect_equal(opts$nuisance_function, "gam")
         expect_equal(opts$nfolds, 10)
     }
 )
