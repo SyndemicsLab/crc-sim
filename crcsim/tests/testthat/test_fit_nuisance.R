@@ -36,6 +36,27 @@ test_that("qhat_logit returns bounded nuisance estimates", {
     expect_true(all(result$q_12 >= 0.05 & result$q_12 <= 1))
 })
 
+test_that("qhat_logit handles repeated person-level rows", {
+    person_data <- data.frame(
+        capture_1 = c(0, 1, 0, 1, 1, 0, 1, 0),
+        capture_2 = c(0, 0, 1, 1, 1, 0, 0, 1),
+        covariate = c(0, 1, 0, 1, 0, 1, 0, 1)
+    )
+    expanded_data <- person_data[rep(seq_len(nrow(person_data)), 1000), ]
+
+    result <- crcsim:::qhat_logit(
+        expanded_data,
+        expanded_data[1:3, ],
+        n_lists = 2,
+        j = 1,
+        k = 2,
+        margin = 0.05
+    )
+
+    expect_named(result, c("q_1", "q_2", "q_12"))
+    expect_length(result$q_1, 3)
+})
+
 test_that("qhat_logit returns NULL when a GLM cannot be fitted", {
     train <- data.frame(
         capture_1 = c("no", "yes", "no"),

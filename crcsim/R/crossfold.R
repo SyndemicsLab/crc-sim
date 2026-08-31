@@ -76,7 +76,10 @@ run_fold <- function(
         silent = TRUE
     )
 
-    if (inherits(nuisance_functions, "try-error")) {
+    if (
+        inherits(nuisance_functions, "try-error") ||
+            is.null(nuisance_functions)
+    ) {
         return(NULL)
     }
 

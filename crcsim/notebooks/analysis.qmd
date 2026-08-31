@@ -34,7 +34,7 @@ library(purrr)
 ```{r}
 set.seed(2024)
 n_individuals <- 30000
-n_sims <- 100
+n_sims <- 1
 
 captures <- c(
     "capture_1",

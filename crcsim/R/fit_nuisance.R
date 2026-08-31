@@ -42,15 +42,50 @@ nuisance_estimation <- function(func, train, test, n_lists, j, k, margin) {
 #' @return A list containing the initial estimates for q_1, q_2, and q_12.
 #' @keywords internal
 qhat_logit <- function(train, test, n_lists, j, k, margin) {
+    model_columns <- c(j, k, (n_lists + 1):ncol(train))
+    fit_data <- train[, model_columns, drop = FALSE]
+    model_names <- c(
+        paste0("d", seq_len(n_lists)),
+        paste0("x", seq_len(ncol(train) - n_lists))
+    )
+    colnames(fit_data) <- model_names[c(j, k, (n_lists + 1):ncol(train))]
+
+    if (nrow(train) > 10000) {
+        # Expanded frequency data can contain many identical rows. Compressing
+        # those rows for fitting is equivalent to fitting the expanded data
+        # with frequency weights, while avoiding a deep GLM call stack.
+        fit_groups <- interaction(fit_data, drop = TRUE, lex.order = TRUE)
+        fit_rows <- !duplicated(fit_groups)
+        fit_weights <- tabulate(
+            as.integer(fit_groups),
+            nbins = nlevels(fit_groups)
+        )
+        fit_data <- fit_data[fit_rows, , drop = FALSE]
+        fit_weights <- fit_weights[as.integer(fit_groups[fit_rows])]
+    } else {
+        fit_weights <- rep(1, nrow(fit_data))
+    }
+
     ## Template Functions for GLM and Q-function estimation
     template_glm <- function(form) {
-        return(
-            try(glm(
+        max_iterations <- if (length(fit_weights) < nrow(train)) 1000 else 25
+        fit <- tryCatch(
+            suppressWarnings(glm(
                 form,
                 family = binomial(link = "logit"),
-                data = train[, c(j, k, (n_lists + 1):ncol(train))]
-            ))
+                data = fit_data,
+                weights = fit_weights,
+                control = glm.control(maxit = max_iterations)
+            )),
+            error = function(error) NULL
         )
+        if (is.null(fit) || !isTRUE(fit$converged)) {
+            return(NULL)
+        }
+        if (!all(is.finite(coef(fit)))) {
+            return(NULL)
+        }
+        return(fit)
     }
 
     template_q_j <- function(d_fit, q_12_offset = 0.0) {
@@ -73,11 +108,11 @@ qhat_logit <- function(train, test, n_lists, j, k, margin) {
     fit_j_k <- template_glm(formula(paste0("d", j, "*d", k, " ~.")))
 
     if (
-        inherits(fit_j_0, "try-error") ||
-            inherits(fit_0_k, "try-error") ||
-            inherits(fit_j_k, "try-error")
+        is.null(fit_j_0) ||
+            is.null(fit_0_k) ||
+            is.null(fit_j_k)
     ) {
-        warning("One or more GLM fits failed.")
+        warning("One or more GLM fits failed or did not converge.")
         return(NULL)
     }
 

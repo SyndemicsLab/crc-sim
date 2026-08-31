@@ -73,13 +73,14 @@ phd_sex_data <- read.csv(phd_sex_file) |>
 expanded <- uncount(phd_sex_data, N_ID)
 
 estimator <- EstimatorOptions$new(
+    method = "plugin",
     capture_columns = c(
         "capture_1", "capture_2", "capture_3",
         "capture_4", "capture_5", "capture_6"
     ),
-    nfolds = 2,
-    model = "logit",
-    threshold = 0.005
+    threshold = 0.005,
+    nuisance_function = "logit",
+    nfolds = 2
 )
 res_0 <- crc(
     model_data = expanded,
