@@ -36,7 +36,7 @@ influence <- function(
     q_12
 ) {
     gamma_inv <- 1 / conditional_capture(q_1, q_2, q_12)
-    psi_inv <- 1 / plugin_estimator(q_1, q_2, q_12)
+    psi_inv <- plugin_estimator(q_1, q_2, q_12)
 
     bias_correction <- (list_1 / q_1) +
         (list_2 / q_2) -

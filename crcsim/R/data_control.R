@@ -272,7 +272,7 @@ suppress_data <- function(data, suppression_threshold, freq_col = "N_ID") {
 #' @export
 extract_captured_data <- function(data_table, capture) {
     captured_rows <- tibble::as_tibble(data_table) |>
-        dplyr::filter(rowSums(dplyr::across(capture)) != 0)
+        dplyr::filter(rowSums(dplyr::across(dplyr::all_of(capture))) != 0)
     return(captured_rows)
 }
 
@@ -291,7 +291,7 @@ extract_captured_data <- function(data_table, capture) {
 #' @export
 extract_uncaptured_data <- function(data_table, capture) {
     uncaptured_rows <- tibble::as_tibble(data_table) |>
-        dplyr::filter(rowSums(dplyr::across(capture)) == 0)
+        dplyr::filter(rowSums(dplyr::across(dplyr::all_of(capture))) == 0)
     return(uncaptured_rows)
 }
 

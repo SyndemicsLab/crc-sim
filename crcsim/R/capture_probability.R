@@ -39,10 +39,10 @@ estimate_capture_prob <- function(
     stopifnot(validate_binary_cols(data, n_lists))
 
     n_covariates <- ncol(data) - n_lists
-    n <- nrow(data)
+    n_obs <- nrow(data)
 
-    if (nfolds > 1 && nfolds > n / 50) {
-        nfolds <- pmax(floor(n / 50), 1)
+    if (nfolds > 1 && nfolds > n_obs / 50) {
+        nfolds <- pmax(floor(n_obs / 50), 1)
         warning(paste0(
             "nfolds is reduced to ",
             nfolds,
@@ -50,7 +50,7 @@ estimate_capture_prob <- function(
         ))
     }
 
-    if (n < 1) {
+    if (n_obs < 1) {
         stop("Data must have at least one row.")
     }
 
@@ -82,7 +82,7 @@ estimate_capture_prob <- function(
 #'
 #' @export
 estimate_no_covariates <- function(data, n_lists) {
-    n <- nrow(data)
+    n_obs <- nrow(data)
     # revalidate that all columns are binary 0/1 values
     stopifnot(validate_binary_cols(data, n_lists))
 
@@ -105,24 +105,34 @@ estimate_no_covariates <- function(data, n_lists) {
             ),
             psi_inv = pmax(q1 * q2 / q12, 1),
             sigma = sqrt(
-                q1 * q2 * pmax(q1 * q2 - q12, 0) * (1 - q12) / q12^3 / n
+                q1 * q2 * pmax(q1 * q2 - q12, 0) *
+                    (1 - q12) / q12^3 / n_obs
             )
         ) |>
         select(listpair, psi_inv, sigma) |>
         mutate(
-            sigma = sqrt(n) * sigma,
-            n = round(n * psi_inv),
-            sigma_n = sqrt(n^2 * sigma^2 + n * psi_inv * (psi_inv - 1)),
+            sigma = sqrt(n_obs) * sigma,
+            n = round(n_obs * psi_inv),
+            sigma_n = sqrt(
+                n_obs^2 * sigma^2 +
+                    n_obs * psi_inv * (psi_inv - 1)
+            ),
             ci_l = round(pmax(
-                n *
+                n_obs *
                     psi_inv -
-                    1.96 * sqrt(n^2 * sigma^2 + n * psi_inv * (psi_inv - 1)),
-                n
+                    1.96 * sqrt(
+                        n_obs^2 * sigma^2 +
+                            n_obs * psi_inv * (psi_inv - 1)
+                    ),
+                n_obs
             )),
             ci_u = round(
-                n *
+                n_obs *
                     psi_inv +
-                    1.96 * sqrt(n^2 * sigma^2 + n * psi_inv * (psi_inv - 1))
+                    1.96 * sqrt(
+                        n_obs^2 * sigma^2 +
+                            n_obs * psi_inv * (psi_inv - 1)
+                    )
             )
         ) |>
         select(listpair, n, sigma_n, ci_l, ci_u)
@@ -176,7 +186,7 @@ estimate_with_covariates <- function(
     list1_vec <- 1:(n_lists - 1)
     list2_vec <- 2:n_lists
 
-    n <- nrow(data)
+    n_obs <- nrow(data)
 
     summaries <- purrr::map_dfr(
         listpairs,
@@ -185,32 +195,35 @@ estimate_with_covariates <- function(
         method = method,
         margin = margin,
         n_lists = n_lists,
-        n = n,
+        n = n_obs,
         func = func
     )
 
     estimates <- summaries |>
         dplyr::mutate(
-            sigma = sqrt(n * var),
-            n = round(n * psi_inverse),
+            sigma = sqrt(n_obs * var),
+            n = round(n_obs * psi_inverse),
             sigma_n = sqrt(
-                n^2 * var + n * psi_inverse * (psi_inverse - 1)
+                n_obs^2 * var +
+                    n_obs * psi_inverse * (psi_inverse - 1)
             ),
             ci_l = round(pmax(
-                n *
+                n_obs *
                     psi_inverse -
                     1.96 *
                         sqrt(
-                            n^2 * var + n * psi_inverse * (psi_inverse - 1)
+                            n_obs^2 * var +
+                                n_obs * psi_inverse * (psi_inverse - 1)
                         ),
-                n
+                n_obs
             )),
             ci_u = round(
-                n *
+                n_obs *
                     psi_inverse +
                     1.96 *
                         sqrt(
-                            n^2 * var + n * psi_inverse * (psi_inverse - 1)
+                            n_obs^2 * var +
+                                n_obs * psi_inverse * (psi_inverse - 1)
                         )
             )
         ) |>

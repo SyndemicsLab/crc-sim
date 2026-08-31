@@ -5,18 +5,26 @@
 \title{Estimate population size with covariates using cross-validated nuisance
 parameter estimation.}
 \usage{
-estimate_with_covariates(method, data, n_lists, funcname, seed = NULL)
+estimate_with_covariates(
+  data,
+  n_lists,
+  method,
+  func,
+  nfolds,
+  margin,
+  seed = NULL
+)
 }
 \arguments{
-\item{method}{The estimation method to be used.}
-
 \item{data}{The dataset containing capture columns and covariates.}
 
 \item{n_lists}{The number of capture lists.}
 
-\item{funcname}{The function used for nuisance parameter estimation.}
+\item{method}{The estimation method to be used.}
 
 \item{seed}{The random seed for reproducibility (default is NULL).}
+
+\item{funcname}{The function used for nuisance parameter estimation.}
 }
 \value{
 A list containing the estimation results and the total population

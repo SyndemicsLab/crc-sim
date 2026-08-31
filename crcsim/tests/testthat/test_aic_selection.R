@@ -78,7 +78,7 @@ test_that("build_aic_error_row returns expected NA fields and error message", {
     formula_object <- stats::as.formula("N_ID ~ capture_1 + capture_2")
     err <- simpleError("synthetic model fitting error")
 
-    out <- build_aic_error_row(formula_object, err)
+    out <- crcsim:::build_aic_error_row(formula_object, err)
 
     expect_s3_class(out, "data.frame")
     expect_equal(nrow(out), 1)
@@ -116,7 +116,7 @@ test_that("build_aic_success_row returns expected schema and rounded values", {
         model_family = "poisson"
     )
 
-    out <- build_aic_success_row(model, formula_object)
+    out <- crcsim:::build_aic_success_row(model, formula_object)
 
     expect_s3_class(out, "data.frame")
     expect_equal(nrow(out), 1)
@@ -142,7 +142,7 @@ test_that("evaluate_formula_with_aic returns error-row shape on failures", {
     model_data <- make_aic_fixture()
     bad_formula <- stats::as.formula("N_ID ~ does_not_exist")
 
-    out <- evaluate_formula_with_aic(
+    out <- crcsim:::evaluate_formula_with_aic(
         formula_object = bad_formula,
         model_data = model_data,
         model_family = "poisson"
@@ -160,7 +160,7 @@ test_that("evaluate_formula_with_aic rejects unsupported model family", {
     formula_object <- stats::as.formula("N_ID ~ capture_1")
 
     expect_error(
-        evaluate_formula_with_aic(
+        crcsim:::evaluate_formula_with_aic(
             formula_object = formula_object,
             model_data = model_data,
             model_family = "badfamily"

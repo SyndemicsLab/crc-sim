@@ -98,10 +98,11 @@ step_regression <- function(
             model,
             scope = list(upper = formula_max, lower = formula_init),
             direction = direction,
-            k = log(nrow(model_data))
+            k = log(nrow(model_data)),
+            trace = as.integer(verbose)
         )
     )
-    # nolint start: implicit_assignment_linter
+    # nolint end: implicit_assignment_linter
 
     intercept <- coef(final_model)[1]
     estimate <- exp(intercept)

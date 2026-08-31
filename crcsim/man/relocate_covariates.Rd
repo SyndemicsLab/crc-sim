@@ -15,8 +15,6 @@ relocated.}
 \value{
 A data frame with the specified covariate columns relocated to the
 end.
-
-importFrom dplyr relocate last_col
 }
 \description{
 This function relocates specified covariate columns in a data

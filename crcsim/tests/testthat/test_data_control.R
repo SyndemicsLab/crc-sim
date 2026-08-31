@@ -143,8 +143,12 @@ test_that("capture row extraction separates captured and uncaptured rows", {
         value = 1:4
     )
 
-    captured <- extract_captured_data(data, c("capture_1", "capture_2"))
-    uncaptured <- extract_uncaptured_data(data, c("capture_1", "capture_2"))
+    captured <- expect_no_warning(
+        extract_captured_data(data, c("capture_1", "capture_2"))
+    )
+    uncaptured <- expect_no_warning(
+        extract_uncaptured_data(data, c("capture_1", "capture_2"))
+    )
 
     expect_equal(captured$value, c(2, 3, 4))
     expect_equal(uncaptured$value, 1)

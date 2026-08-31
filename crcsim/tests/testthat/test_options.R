@@ -156,10 +156,10 @@ test_that(
     ),
     {
         opts <- EstimatorOptions$new(
-            model = "logit",
+            method = "logit",
             capture_columns = c("list_A", "list_B"),
             threshold = 0.10,
-            list_pair = c("list_A", "list_B"),
+            nusiance_function = "logit",
             nfolds = 5
         )
 
@@ -168,7 +168,7 @@ test_that(
         expect_equal(opts$threshold, 0.10)
 
         # Check EstimatorOptions-specific fields
-        expect_equal(opts$list_pair, c("list_A", "list_B"))
+        expect_equal(opts$nusiance_function, "logit")
         expect_equal(opts$nfolds, 5)
     }
 )
@@ -210,10 +210,10 @@ test_that(
     paste("EstimatorOptions inherits from Options"),
     {
         opts <- EstimatorOptions$new(
-            model = "logit",
+            method = "logit",
             capture_columns = c("list_A", "list_B"),
             threshold = 0.10,
-            list_pair = c("list_A", "list_B"),
+            nusiance_function = "logit",
             nfolds = 5
         )
 
@@ -304,24 +304,24 @@ test_that(
     paste("EstimatorOptions initialize method returns the same", "instance"),
     {
         opts <- EstimatorOptions$new(
-            model = "logit",
+            method = "logit",
             capture_columns = c("list_A", "list_B"),
             threshold = 0.10,
-            list_pair = c("list_A", "list_B"),
+            nusiance_function = "logit",
             nfolds = 5
         )
         result <- opts$initialize(
-            model = "gam",
+            method = "gam",
             capture_columns = c("L1", "L2"),
             threshold = 0.15,
-            list_pair = c("L1", "L2"),
+            nusiance_function = "gam",
             nfolds = 10
         )
 
         expect_identical(result, opts)
         expect_equal(opts$model, "gam")
         expect_equal(opts$threshold, 0.15)
-        expect_equal(opts$list_pair, c("L1", "L2"))
+        expect_equal(opts$nusiance_function, "gam")
         expect_equal(opts$nfolds, 10)
     }
 )

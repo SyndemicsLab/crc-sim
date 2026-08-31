@@ -46,8 +46,8 @@ test_that("validate_binary_cols accepts binary columns", {
         value = c(2, 3, 4)
     )
 
-    expect_true(validate_binary_cols(data, end = 2))
-    expect_true(validate_binary_cols(data, start = 2, end = 2))
+    expect_true(crcsim:::validate_binary_cols(data, end = 2))
+    expect_true(crcsim:::validate_binary_cols(data, start = 2, end = 2))
 })
 
 test_that("validate_binary_cols rejects non-binary columns", {
@@ -57,8 +57,8 @@ test_that("validate_binary_cols rejects non-binary columns", {
         value = c(2, 3, 4)
     )
 
-    expect_false(validate_binary_cols(data, end = 2))
-    expect_false(validate_binary_cols(data, start = 3, end = 3))
+    expect_false(crcsim:::validate_binary_cols(data, end = 2))
+    expect_false(crcsim:::validate_binary_cols(data, start = 3, end = 3))
 })
 
 test_that("validate_binary_cols validates only the requested column range", {
@@ -68,7 +68,7 @@ test_that("validate_binary_cols validates only the requested column range", {
         capture_2 = c(1, 0)
     )
 
-    expect_true(validate_binary_cols(data, start = 2, end = 3))
+    expect_true(crcsim:::validate_binary_cols(data, start = 2, end = 3))
 })
 
 test_that("zero_matrix creates a zero-filled named matrix", {

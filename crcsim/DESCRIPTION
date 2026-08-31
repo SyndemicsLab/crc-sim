@@ -12,6 +12,8 @@ LazyData: true
 Imports: 
     drpop,
     dplyr,
+    tidyr,
+    R6,
     doFuture,
     doRNG,
     future,

@@ -27,3 +27,16 @@ if (
 } else {
 	library(crcsim)
 }
+
+quiet_glm_call <- function(expression) {
+	result_environment <- new.env(parent = emptyenv())
+	evaluate_expression <- function() {
+		evaluated_expression <- suppressWarnings(
+			suppressMessages(force(expression))
+		)
+		result_environment$result <- evaluated_expression
+		return(invisible(NULL))
+	}
+	utils::capture.output(evaluate_expression())
+	return(result_environment$result)
+}

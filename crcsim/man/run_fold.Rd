@@ -4,16 +4,7 @@
 \alias{run_fold}
 \title{Run a single fold of the cross-validation procedure.}
 \usage{
-run_fold(
-  fold_split,
-  method,
-  j,
-  k,
-  margin,
-  n_lists,
-  n,
-  nuisance_estimation_func
-)
+run_fold(fold_split, method, j, k, margin, n_lists, n, func)
 }
 \arguments{
 \item{fold_split}{A list containing the training set, test set, and the
