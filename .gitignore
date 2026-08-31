@@ -1,3 +1,11 @@
+# IDE Details
+.vscode/
+.Rproj.user/
+.quarto/
+
+*.csv
+*.png
+
 # History files
 .Rhistory
 .Rapp.history

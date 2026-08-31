@@ -1,0 +1,108 @@
+---
+title: "MA Department of Public Health OUD Data Analysis"
+author:
+    - name: "Matthew Carroll"
+---
+
+# Introduction
+
+The data contained in this notebook is the property of the Massachusetts Department of Public Health (MDPH). It is intended for use solely in the context of this analysis and should not be shared or distributed without proper authorization. As such, the data and figures presented herein are not rendered publicly or made available outside the scope of this authorized analysis.
+
+## Data Overview
+
+The MA DPH provides a set of longitudinally linked data covering various aspects of opioid use disorder (OUD) within the state. This includes information on patient demographics, treatment episodes, prescription records, and health outcomes, allowing for comprehensive analysis of trends and patterns in OUD over time. This data is captured across multiple different interactions with the healthcare system. We will refer to each dataset as a capture list. Each capture list represents a distinct source of information, and by linking them together, we can obtain a more complete picture of the OUD landscape in Massachusetts.
+
+:::{.callout-note}
+The datasets are as follows:
+1. Casemix
+2. APCD
+3. BSAS
+4. PMP
+5. Matris
+6. Death
+
+And all technical documentation can be found here: [MA DPH Public Health Data Warehouse](https://www.mass.gov/info-details/public-health-data-warehouse-data-sources)
+:::
+
+```{r setup, include=FALSE}
+devtools::load_all("crcsim")
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+```
+
+## Covariates
+
+We have data extracted from DPH by race, sex, and age. However, as we do not have row level data (e.g. we only have aggregates) we cannot effectively combine the covariates to create a larger multidimensional dataset that captures the intersection of these characteristics. Thus, we are limited to expanding the aggregated data according to the counts within each individual covariate category.
+
+### Sex Covariate
+
+As sex is the easiest categorical covariate to classify from the DPH and has the least suppression, we can start with it for our analysis. In the PHD, the sex data is 1-indexed (e.g. 1 for male, 2 for female). We therefore subtract 1 from each value to convert it to 0-indexed (e.g. 0 for male, 1 for female) and make it comparable to the analysis data. 
+
+```{r file-loading}
+phd_sex_file <- file.path("path", "to", "OUDOrigin_Sex_17JUL2025.csv")
+```
+
+## Extract and Prepare Sex Covariate Data
+
+```{r sex-covariate}
+extract_year <- 2022
+
+phd_sex_data <- read.csv(phd_sex_file) |>
+    rename(
+        capture_1 = Casemix,
+        capture_2 = APCD,
+        capture_3 = BSAS,
+        capture_4 = PMP,
+        capture_5 = Matris,
+        capture_6 = Death
+    ) |>
+    mutate(
+        final_sex = final_sex - 1
+    ) |>
+    rename(covariate_1 = final_sex) |>
+    filter(year == extract_year) |>
+    # filter(N_ID > 0) |> # Remove suppressed rows
+    mutate(N_ID = ifelse(N_ID < 0, 2, N_ID)) |> # replace suppressed rows with 2
+    select(-year)
+```
+
+## Run CRC with DR/TMLE/PI
+
+```{r}
+expanded <- uncount(phd_sex_data, N_ID)
+
+estimator <- EstimatorOptions$new(
+    method = "plugin",
+    capture_columns = c(
+        "capture_1", "capture_2", "capture_3",
+        "capture_4", "capture_5", "capture_6"
+    ),
+    threshold = 0.005,
+    nuisance_function = "logit",
+    nfolds = 2
+)
+res_0 <- crc(
+    model_data = expanded,
+    opts = estimator
+)
+```
+
+## Run CRC with AIC Selection
+
+```{r}
+freq_data <- select(phd_sex_data, -covariate_1)
+
+aic_options <- AICOptions$new(
+    model = "poisson",
+    capture_columns = c(
+        "capture_1", "capture_2", "capture_3",
+        "capture_4", "capture_5", "capture_6"
+    )
+)
+
+aic_results <- crc(freq_data, aic_options)[1, ]
+estimate <- aic_results$estimate
+lci <- aic_results$lci
+uci <- aic_results$uci
+```
