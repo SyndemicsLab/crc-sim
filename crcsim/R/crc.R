@@ -25,18 +25,18 @@
 #' columns indicating involvement in the given database
 #' @param opts Options Object: An object containing the options for the CRC
 #' estimation. This should be an instance of one of the options classes defined
-#' in options.R, such as AICOptions, StepwiseOptions, or EstimatorOptions.
+#' in options.R, such as LoglinearOptions or EstimatorOptions.
 #'
 #' @export
 crc <- function(model_data, opts, seed = NULL, diagnostics = "quiet") {
-    if (inherits(opts, "FrequencyOptions")) {
-        if (inherits(opts, "AICOptions")) {
+    if (inherits(opts, "LoglinearOptions")) {
+        if (opts$selection_method == "aic") {
             return(aic_selection(model_data, opts))
-        } else if (inherits(opts, "StepwiseOptions")) {
-            return(stepwise_selection(model_data, opts))
-        } else {
-            stop("Invalid FrequencyOptions object provided.")
         }
+        if (opts$selection_method == "stepwise") {
+            return(stepwise_selection(model_data, opts))
+        }
+        stop("Invalid LoglinearOptions selection method.")
     } else if (inherits(opts, "EstimatorOptions")) {
         return(row_level_estimation(model_data, opts, seed, diagnostics))
     }

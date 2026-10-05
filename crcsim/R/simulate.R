@@ -4,7 +4,7 @@
 # Created Date: 2026-08-17                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-09-08                                                    #
+# Last Modified: 2026-09-23                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -42,48 +42,48 @@ simulate <- function(
     known_pop_size <- nrow(sim_data)
     unknown_pop_size <- n_individuals - known_pop_size
 
-    # internal_estimates <- drpop::popsize(
-    #     sim_data,
-    #     K = length(captures),
-    #     funcname = "logit",
-    #     nfolds = 2,
-    #     margin = 0.005
-    # )$result |>
-    #     group_by(method) |>
-    #     summarise(
-    #         estimate = mean(n),
-    #         lower_ci = min(cin.l),
-    #         upper_ci = max(cin.u)
-    #     )
-
-    internal_estimates <- lapply(
-        c("plugin", "doubly_robust", "tmle"),
-        function(method) {
-            estimate <- estimate_capture_prob(
-                data = sim_data,
-                n_lists = length(captures),
-                method = method,
-                func = link_function,
-                nfolds = 2,
-                margin = 0.005,
-                seed = 1
-            )
-            return(estimate)
-        }
-    )
-    internal_estimates <- bind_rows(internal_estimates) |>
-        mutate(
-            method = rep(
-                c("PI", "DR", "TMLE"),
-                vapply(internal_estimates, nrow, integer(1))
-            ),
-            lower_ci = ci_l,
-            upper_ci = ci_u
-        ) |>
-        select(method, n, lower_ci, upper_ci) |>
-        rename(
-            estimate = n
+    internal_estimates <- drpop::popsize(
+        sim_data,
+        K = length(captures),
+        funcname = "logit",
+        nfolds = 2,
+        margin = 0.02
+    )$result |>
+        group_by(method) |>
+        summarise(
+            estimate = mean(n),
+            lower_ci = min(cin.l),
+            upper_ci = max(cin.u)
         )
+
+    # internal_estimates <- lapply(
+    #     c("plugin", "doubly_robust", "tmle"),
+    #     function(method) {
+    #         estimate <- estimate_capture_prob(
+    #             data = sim_data,
+    #             n_lists = length(captures),
+    #             method = method,
+    #             func = link_function,
+    #             nfolds = 2,
+    #             margin = 0.005,
+    #             seed = 1
+    #         )
+    #         return(estimate)
+    #     }
+    # )
+    # internal_estimates <- bind_rows(internal_estimates) |>
+    #     mutate(
+    #         method = rep(
+    #             c("PI", "DR", "TMLE"),
+    #             vapply(internal_estimates, nrow, integer(1))
+    #         ),
+    #         lower_ci = ci_l,
+    #         upper_ci = ci_u
+    #     ) |>
+    #     select(method, n, lower_ci, upper_ci) |>
+    #     rename(
+    #         estimate = n
+    #     )
 
     internal_df <- internal_estimates |>
         mutate(
@@ -92,18 +92,20 @@ simulate <- function(
             upper_ci = ((upper_ci - n_individuals) / n_individuals) * 100
         )
 
-    aic_options <- AICOptions$new(
-        model = "poisson",
-        capture_columns = captures
+    aic_options <- LoglinearOptions$new(
+        capture_columns = captures,
+        model_family = "poisson",
+        selection_method = "aic"
     )
 
-    step_options <- StepwiseOptions$new(
-        model = "poisson",
+    step_options <- LoglinearOptions$new(
         capture_columns = captures,
-        threshold = 0.005,
-        direction = "both",
-        frequency_col_name = "N_ID",
-        interaction_limit = 2
+        model_family = "poisson",
+        selection_method = "stepwise",
+        selection_options = list(
+            direction = "both",
+            interaction_limit = 2
+        )
     )
 
     aic_results <- crc(no_cov_sim_data, aic_options)
@@ -138,18 +140,20 @@ simulate <- function(
     )
     # nolint end: indentation_linter
 
-    aic_options <- AICOptions$new(
-        model = "negbin",
-        capture_columns = captures
+    aic_options <- LoglinearOptions$new(
+        capture_columns = captures,
+        model_family = "negbin",
+        selection_method = "aic"
     )
 
-    step_options <- StepwiseOptions$new(
-        model = "negbin",
+    step_options <- LoglinearOptions$new(
         capture_columns = captures,
-        threshold = 0.005,
-        direction = "both",
-        frequency_col_name = "N_ID",
-        interaction_limit = 2
+        model_family = "negbin",
+        selection_method = "stepwise",
+        selection_options = list(
+            direction = "both",
+            interaction_limit = 2
+        )
     )
 
     aic_nb_results <- crc(no_cov_sim_data, aic_options)

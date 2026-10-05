@@ -4,7 +4,16 @@
 \alias{nuisance_estimation}
 \title{Estimate nuisance parameters using the specified function.}
 \usage{
-nuisance_estimation(func, train, test, n_lists, j, k, margin)
+nuisance_estimation(
+  func,
+  train,
+  test,
+  n_lists,
+  j,
+  k,
+  margin,
+  diagnostics = "quiet"
+)
 }
 \arguments{
 \item{func}{The function to use for nuisance estimation.}
@@ -20,6 +29,8 @@ nuisance_estimation(func, train, test, n_lists, j, k, margin)
 \item{k}{Index for the second variable.}
 
 \item{margin}{The margin for estimation.}
+
+\item{diagnostics}{Controls GLM fit diagnostics.}
 }
 \value{
 Estimated nuisance parameters.

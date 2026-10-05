@@ -4,9 +4,7 @@
 \alias{EstimatorOptions}
 \title{Plugin Options Class}
 \description{
-This class defines the options for the plugin estimator formula
-selection method in CRC. It inherits from the base Options class and
-includes additional parameters specific to the plugin method.
+This class defines the options for the plugin estimator.
 }
 \section{Super class}{
 \code{\link[crcsim:Options]{Options}} -> \code{EstimatorOptions}
@@ -48,22 +46,14 @@ folds.}
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{method}}{Character scalar naming the estimation
-method to be used.}
-      \item{\code{capture_columns}}{Character vector naming the binary capture
-indicator columns. If NULL, all binary columns will be assumed to be
-capture indicators.}
-      \item{\code{threshold}}{Numeric scalar giving the threshold applied by
-threshold-based selection methods.}
-      \item{\code{nuisance_function}}{Character scalar identifying the function
-to use to estimate nuisance parameters.}
-      \item{\code{nfolds}}{Integer scalar giving the number of cross-validation
-folds.}
+      \item{\code{method}}{Character scalar naming the estimation method.}
+      \item{\code{capture_columns}}{Character vector naming the binary capture indicator
+columns.}
+      \item{\code{threshold}}{Numeric scalar giving the probability margin.}
+      \item{\code{nuisance_function}}{Character scalar identifying the nuisance model.}
+      \item{\code{nfolds}}{Integer scalar giving the number of cross-validation folds.}
     }
     \if{html}{\out{</div>}}
-  }
-  \subsection{Returns}{
-    The initialized \code{EstimatorOptions} object.
   }
 }
 

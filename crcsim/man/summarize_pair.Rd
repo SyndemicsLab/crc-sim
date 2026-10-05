@@ -5,7 +5,7 @@
 \title{Summarize the results for a specific pair of capture lists across all
 cross-validation folds.}
 \usage{
-summarize_pair(listpair, folds, ...)
+summarize_pair(listpair, folds, diagnostics = "quiet", ...)
 }
 \arguments{
 \item{listpair}{A character string representing the pair of capture lists
@@ -13,6 +13,8 @@ summarize_pair(listpair, folds, ...)
 
 \item{folds}{A list of cross-validation folds, each containing training and
 test sets.}
+
+\item{diagnostics}{Controls GLM fit diagnostics.}
 
 \item{...}{Additional arguments passed to the `run_fold` function.}
 }

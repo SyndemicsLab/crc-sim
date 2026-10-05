@@ -26,13 +26,15 @@ make_stepwise_options <- function(
     direction = "both",
     interaction_limit = 2
 ) {
-    opts <- StepwiseOptions$new(
-        model = model,
+    opts <- LoglinearOptions$new(
         capture_columns = c("capture_1", "capture_2", "capture_3"),
-        threshold = threshold,
-        direction = direction,
+        model_family = model,
         frequency_col_name = "N_ID",
-        interaction_limit = interaction_limit
+        selection_method = "stepwise",
+        selection_options = list(
+            direction = direction,
+            interaction_limit = interaction_limit
+        )
     )
     return(opts)
 }
@@ -41,12 +43,12 @@ make_stepwise_options <- function(
 # Input Validation Tests
 # ============================================================================
 
-test_that("stepwise_selection errors when opts is not a StepwiseOptions object", {
+test_that("stepwise_selection errors when opts is not a LoglinearOptions object", {
     model_data <- make_stepwise_fixture()
 
     expect_error(
         stepwise_selection(model_data, list()),
-        "Invalid StepwiseOptions object provided"
+        "Invalid LoglinearOptions object provided"
     )
 })
 

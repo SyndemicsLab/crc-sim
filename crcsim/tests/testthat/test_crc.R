@@ -25,23 +25,23 @@ make_crc_aic_options <- function() {
         stats::as.formula("N_ID ~ capture_1 + capture_2"),
         stats::as.formula("N_ID ~ capture_1 * capture_2")
     )
-    aic_options <- AICOptions$new(
-        model = "poisson",
+    aic_options <- LoglinearOptions$new(
         capture_columns = c("capture_1", "capture_2", "capture_3"),
-        formula = formulas,
-        frequency_col_name = "N_ID"
+        frequency_col_name = "N_ID",
+        selection_options = list(formulas = formulas)
     )
     return(aic_options)
 }
 
 make_crc_stepwise_options <- function() {
-    stepwise_options <- StepwiseOptions$new(
-        model = "poisson",
+    stepwise_options <- LoglinearOptions$new(
         capture_columns = c("capture_1", "capture_2", "capture_3"),
-        threshold = 0.05,
-        direction = "both",
         frequency_col_name = "N_ID",
-        interaction_limit = 2
+        selection_method = "stepwise",
+        selection_options = list(
+            direction = "both",
+            interaction_limit = 2
+        )
     )
     return(stepwise_options)
 }
@@ -57,7 +57,7 @@ make_crc_estimator_options <- function() {
     return(estimator_options)
 }
 
-test_that("crc dispatches AIC options to aic_selection", {
+test_that("crc dispatches LoglinearOptions with AIC selection", {
     model_data <- make_crc_frequency_fixture()
     opts <- make_crc_aic_options()
 
@@ -67,7 +67,7 @@ test_that("crc dispatches AIC options to aic_selection", {
     )
 })
 
-test_that("crc dispatches stepwise options to stepwise_selection", {
+test_that("crc dispatches LoglinearOptions with stepwise selection", {
     model_data <- make_crc_frequency_fixture()
     opts <- make_crc_stepwise_options()
 
@@ -87,21 +87,6 @@ test_that("crc dispatches estimator options to row_level_estimation", {
     expect_equal(
         quiet_glm_call(crc(model_data, opts)),
         quiet_glm_call(row_level_estimation(model_data, opts))
-    )
-})
-
-test_that("crc rejects a bare FrequencyOptions object", {
-    opts <- FrequencyOptions$new(
-        model = "poisson",
-        capture_columns = c("capture_1", "capture_2"),
-        threshold = 0.05,
-        formulas = NULL,
-        frequency_col_name = "N_ID"
-    )
-
-    expect_error(
-        crc(data.frame(), opts),
-        "Invalid FrequencyOptions object provided"
     )
 })
 

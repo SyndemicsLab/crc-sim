@@ -4,7 +4,7 @@
 \alias{test_list_overlap}
 \title{Test the overlap between two capture lists.}
 \usage{
-test_list_overlap(l1, l2, margin)
+test_list_overlap(l1, l2, margin, l1_name = NULL, l2_name = NULL)
 }
 \arguments{
 \item{l1}{The first capture list.}

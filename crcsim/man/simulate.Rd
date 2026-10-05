@@ -9,6 +9,7 @@ simulate(
   n_individuals,
   n_covariates,
   captures,
+  link_function = "logit",
   cov_func = covariate_conditions
 )
 }

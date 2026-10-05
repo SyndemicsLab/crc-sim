@@ -10,7 +10,7 @@ stepwise_selection(model_data, opts, verbose = FALSE)
 \item{model_data}{a data frame containing the observed capture histories and
 a frequency column.}
 
-\item{opts}{a \code{StepwiseOptions} object specifying the options for
+\item{opts}{a \\code{LoglinearOptions} object specifying the options for
 stepwise regression, including the model family, p-value threshold for
 variable inclusion, and stepwise direction.}
 }

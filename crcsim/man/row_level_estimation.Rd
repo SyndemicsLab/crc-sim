@@ -4,7 +4,7 @@
 \alias{row_level_estimation}
 \title{CRC with Plugin Estimators}
 \usage{
-row_level_estimation(data, opts)
+row_level_estimation(data, opts, seed = NULL, diagnostics = "quiet")
 }
 \arguments{
 \item{data}{a data frame containing the capture data. All columns must be

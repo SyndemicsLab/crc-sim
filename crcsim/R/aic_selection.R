@@ -29,22 +29,28 @@
 #'
 #' @export
 aic_selection <- function(model_data, opts) {
-    if (!inherits(opts, "AICOptions")) {
-        stop("Invalid AICOptions object provided.")
+    if (!inherits(opts, "LoglinearOptions")) {
+        stop("Invalid LoglinearOptions object provided.")
     }
+    if (opts$selection_method != "aic") {
+        stop("LoglinearOptions must use selection_method = \"aic\".")
+    }
+    formulas <- opts$selection_options[["formulas"]]
+    frequency_col_name <- opts$frequency_col_name
+    model_family <- opts$model_family
 
-    if (!is_frequency_table(model_data, opts[["frequency_col_name"]])) {
+    if (!is_frequency_table(model_data, frequency_col_name)) {
         stop(paste(
             "Data must be a frequency table with a numeric frequency column",
-            opts[["frequency_col_name"]]
+            frequency_col_name
         ))
     }
 
     output <- map(
-        opts[["formulas"]],
+        formulas,
         evaluate_formula_with_aic,
         model_data = model_data,
-        model_family = opts[["model"]]
+        model_family = model_family
     ) |>
         bind_rows() |>
         arrange(.data[["AIC"]])

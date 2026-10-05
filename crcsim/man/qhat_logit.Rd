@@ -5,7 +5,7 @@
 \title{Estimate the initial nuisance parameters using GLM fits on the training data
 and predict on the test data.}
 \usage{
-qhat_logit(train, test, n_lists, j, k, margin)
+qhat_logit(train, test, n_lists, j, k, margin, diagnostics = "quiet")
 }
 \arguments{
 \item{train}{The training dataset.}
@@ -19,6 +19,8 @@ qhat_logit(train, test, n_lists, j, k, margin)
 \item{k}{Index for the second variable.}
 
 \item{margin}{The margin for estimation.}
+
+\item{diagnostics}{Controls GLM fit diagnostics.}
 }
 \value{
 A list containing the initial estimates for q_1, q_2, and q_12.

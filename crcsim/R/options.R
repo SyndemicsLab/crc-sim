@@ -4,7 +4,7 @@
 # Created Date: 2026-05-15                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-09-04                                                    #
+# Last Modified: 2026-09-08                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -15,40 +15,21 @@
 ## when editing this file!
 
 #' CRC Options Classes
-#' @description This file defines the R6 classes for the options used in the
-#' different CRC formula selection methods. These classes encapsulate the
-#' parameters and settings for each method, allowing for organized and
-#' structured handling of the options when running CRC with different formula
-#' selection approaches.
-#'
-#' @param model The model family or function to apply to the data. If using a
-#' log-linear model, this should be either "poisson" or "negbin". If using
-#' a plugin estimator, this should be a "logit", "ranger", "rangerlogit", or
-#' "gam".
-#' @param threshold The p-value threshold for variable inclusion in the model.
+#' @description Base options shared by CRC estimation workflows.
 #' @export
 # fmt: skip
 Options <- R6::R6Class( # nolint: object_name_linter
     "Options",
     public = list(
-        #' @field model Character scalar identifying either the log-linear
-        #' model or the nuisance function to utilize.
+        #' @field model Shared model or estimator method field.
         model = NULL,
         #' @field capture_columns Character vector naming the binary capture
         #' indicator columns.
         capture_columns = NULL,
-        #' @field threshold Numeric scalar giving the threshold applied by
-        #' threshold-based selection methods or the margin desired by stepwise
-        #' selection.
+        #' @field threshold Shared threshold or probability margin.
         threshold = NULL,
 
         #' @description Create a new \code{Options} instance.
-        #' @param model Character scalar identifying either the log-linear
-        #' model or the nuisance function to utilize.
-        #' @param threshold Numeric scalar giving the threshold applied by
-        #' threshold-based selection methods or the margin desired by stepwise
-        #' selection.
-        #' @return The initialized \code{Options} object.
         initialize = function(model, capture_columns, threshold) {
             self$model <- model
             self$capture_columns <- capture_columns
@@ -58,231 +39,174 @@ Options <- R6::R6Class( # nolint: object_name_linter
     )
 )
 
-#' Frequency Options Class
-#' @description This class defines the options for the frequency-based formula
-#' selection methods in CRC. It inherits from the base Options class and
-#' includes additional parameters specific to the frequency-based methods
+#' Log-linear Options Class
+#' @description This class contains the complete configuration for selecting
+#' and fitting log-linear capture-recapture models.
 #'
-#' @param formulas Optional formula object or list of formulas to initialize
-#' the object with.
-#' @export
-# fmt:skip
-FrequencyOptions <- R6::R6Class( # nolint: object_name_linter
-    "FrequencyOptions",
-    inherit = Options,
-    public = list(
-        #' @field formulas Formula object or collection of formulas used when
-        #' fitting frequency-based CRC models.
-        formulas = NULL,
-        #' @field frequency_col_name Character scalar naming the frequency
-        #' column.
-        frequency_col_name = NULL,
-
-        #' @description Create a new \code{FrequencyOptions} instance.
-        #' @param model Character scalar identifying the model family.
-        #' @param threshold Numeric scalar giving the threshold applied by
-        #' threshold-based selection methods.
-        #' @param formulas Optional formula object or list of formulas used to
-        #' initialize the object.
-        #' @param frequency_col_name Character scalar naming the frequency
-        #' column in the aggregated CRC data.
-        #' @return The initialized \code{FrequencyOptions} object.
-        initialize = function(
-            model,
-            capture_columns,
-            threshold,
-            formulas,
-            frequency_col_name
-        ) {
-            super$initialize(model, capture_columns, threshold)
-            self$formulas <- formulas
-            self$frequency_col_name <- frequency_col_name
-            return(self)
-        },
-
-        #' @description Append a single formula to \code{self$formulas}.
-        #' @param formula A formula object to append.
-        #' @return The updated \code{FrequencyOptions} object.
-        add_formula = function(formula) {
-            if (is.null(self$formulas)) {
-                self$formulas <- formula
-            } else {
-                self$formulas <- c(self$formulas, formula)
-            }
-            return(self)
-        },
-
-        #' @description Append multiple formulas to \code{self$formulas}.
-        #' @param formula_list A list of formula objects to append.
-        #' @return The updated \code{FrequencyOptions} object.
-        add_formulas = function(formula_list) {
-            if (is.null(self$formulas)) {
-                self$formulas <- formula_list
-            } else {
-                self$formulas <- c(self$formulas, formula_list)
-            }
-            return(self)
-        }
-    )
-)
-
-#' Stepwise Options Class
-#' @description This class defines the options for the stepwise formula
-#' selection method in CRC. It inherits from the base Options class and
-#' includes additional parameters specific to the stepwise method.
-#'
-#' @param direction The direction of the stepwise selection, either "forward",
-#' "backward", or "both".
-#' @param frequency_column The name of the column in the data that contains the
-#' frequency counts for each capture history.
-#' @param capture_indicators A vector of the names of the columns in the data
-#' that indicate the capture history (i.e., which lists captured each
-#' individual).
-#' @param interaction_limit Integer scalar giving the maximum order of
-#' interactions to include in the stepwise search.
-#' @export
-#fmt: skip
-StepwiseOptions <- R6::R6Class( # nolint: object_name_linter
-    "StepwiseOptions",
-    inherit = FrequencyOptions,
-    public = list(
-        #' @field direction Character scalar specifying the stepwise search
-        #' direction.
-        direction = NULL,
-        #' @field interaction_limit Integer scalar giving the maximum order of
-        #' interactions to include in the search.
-        interaction_limit = 2,
-
-        #' @description Create a new \code{StepwiseOptions} instance.
-        #' @param model Character scalar identifying the model family.
-        #' @param threshold Numeric scalar giving the stepwise inclusion
-        #' threshold.
-        #' @param direction Character scalar specifying the stepwise search
-        #' direction.
-        #' @param frequency_column Character scalar naming the frequency column
-        #' in the aggregated CRC data.
-        #' @param capture_indicators Character vector naming the capture history
-        #' indicator columns.
-        #' @param interaction_limit Integer scalar giving the maximum order of
-        #' interactions to include in the search.
-        #' @return The initialized \code{StepwiseOptions} object.
-        initialize = function(
-            model,
-            capture_columns,
-            threshold,
-            direction,
-            frequency_col_name = "N_ID",
-            interaction_limit = 2
-        ) {
-            super$initialize(
-                model,
-                capture_columns,
-                threshold,
-                formulas = NULL,
-                frequency_col_name = frequency_col_name
-            )
-            self$direction <- direction
-            self$interaction_limit <- interaction_limit
-            return(self)
-        }
-    )
-)
-
-#' AIC Options Class
-#' @description This class defines the options for the AIC-based formula
-#' selection method in CRC. It inherits from the base Options class and
-#' includes additional parameters specific to the AIC-based method.
-#'
-#' @param formula A formula object specifying the log-linear model to fit. If
-#' NULL, the formula will be determined based on the specified formula
-#' selection method.
-#' @param frequency_column The name of the column in the data that contains the
-#' frequency counts for each capture history.
-#' @param capture_indicators A vector of the names of the columns in the data
-#' that indicate the capture history (i.e., which lists captured each
-#' individual).
+#' @param capture_columns Character vector naming the binary capture
+#' indicator columns.
+#' @param frequency_col_name Character scalar naming the frequency column.
+#' @param model_family Character scalar identifying the log-linear model family,
+#' either "poisson" or "negbin".
+#' @param selection_method Character scalar identifying the formula selection
+#' method, either "aic" or "stepwise".
+#' @param selection_criterion Character scalar identifying the information
+#' criterion, either "AIC" or "BIC".
+#' @param selection_options Named list containing method-specific settings.
 #' @export
 # fmt: skip
-AICOptions <- R6::R6Class( # nolint: object_name_linter
-    "AICOptions",
-    inherit = FrequencyOptions,
+LoglinearOptions <- R6::R6Class( # nolint: object_name_linter
+    "LoglinearOptions",
+    inherit = Options,
     public = list(
-        #' @field formulas Formula object or collection of formulas evaluated by
-        #' the AIC-based selection routine.
-        formulas = NULL,
-        #' @description Create a new \code{AICOptions} instance.
-        #' @param model Character scalar identifying the model family.
-        #' @param formula Optional formula object to evaluate directly.
-        #' @param frequency_col_name Character scalar naming the frequency
-        #' column
-        #' in the aggregated CRC data.
-        #' @param capture_indicators Character vector naming the capture history
-        #' indicator columns.
-        #' @return The initialized \code{AICOptions} object.
+        #' @field frequency_col_name Character scalar naming the frequency
+        #' column in the aggregated CRC data.
+        frequency_col_name = NULL,
+        #' @field model_family Character scalar identifying the log-linear
+        #' model family.
+        model_family = NULL,
+        #' @field selection_method Character scalar identifying the formula
+        #' selection method.
+        selection_method = NULL,
+        #' @field selection_criterion Character scalar identifying the
+        #' information criterion.
+        selection_criterion = NULL,
+        #' @field selection_options Named list of method-specific settings.
+        selection_options = NULL,
+
+        #' @description Create a new \code{LoglinearOptions} instance.
+        #' @return The initialized \code{LoglinearOptions} object.
         initialize = function(
-            model,
-            capture_columns = NULL,
-            formula = NULL,
-            frequency_col_name = "N_ID"
-        ) {
-            super$initialize(
-                model,
-                capture_columns,
-                threshold = NULL,
-                formulas = NULL,
-                frequency_col_name = frequency_col_name
-            )
-            self$formulas <- private$validate_formula_input(
-                frequency_col_name,
-                capture_columns,
-                formula
-            )
-            return(self)
-        }
-    ),
-    private = list(
-        # Note: These are not Roxygen2 comments because it errors on private
-        # members of classes being commented
-        # @description Validate or generate the formula input used by
-        # \code{AICOptions}.
-        # @param freq_column Character scalar naming the frequency column in
-        # the aggregated CRC data.
-        # @param binary_variables Character vector naming the binary capture
-        # indicator columns.
-        # @param formula Optional formula object supplied by the caller.
-        # @return A formula object or collection of formulas for AIC model
-        # evaluation.
-        validate_formula_input = function(
-            frequency_col_name,
             capture_columns,
-            formula
+            frequency_col_name = "N_ID",
+            model_family = "poisson",
+            selection_method = "aic",
+            selection_criterion = "AIC",
+            selection_options = list()
         ) {
-            if (!is.null(formula)) {
-                return(formula)
+            if (
+                !is.null(capture_columns) &&
+                    (!is.character(capture_columns) ||
+                        anyNA(capture_columns) ||
+                        anyDuplicated(capture_columns) > 0)
+            ) {
+                stop("capture_columns must be unique character names or NULL.")
             }
-            if (is.null(frequency_col_name) || is.null(capture_columns)) {
-                stop(
-                    paste(
-                        "If formula is not provided, frequency_col_name and",
-                        "capture_columns must be specified."
+            if (
+                length(frequency_col_name) != 1 ||
+                    !is.character(frequency_col_name) ||
+                    is.na(frequency_col_name) ||
+                    !nzchar(frequency_col_name)
+            ) {
+                stop("frequency_col_name must be a non-empty character scalar.")
+            }
+            model_family <- match.arg(model_family, c("poisson", "negbin"))
+            selection_method <- match.arg(
+                selection_method,
+                c("aic", "stepwise")
+            )
+            selection_criterion <- match.arg(
+                selection_criterion,
+                c("AIC", "BIC")
+            )
+            if (
+                !is.list(selection_options) ||
+                    (
+                        length(selection_options) > 0 &&
+                            (
+                                is.null(names(selection_options)) ||
+                                    any(names(selection_options) == "") ||
+                                    anyDuplicated(names(selection_options)) > 0
+                            )
                     )
+            ) {
+                stop("selection_options must be a named list.")
+            }
+
+            allowed_options <- if (selection_method == "aic") {
+                "formulas"
+            } else {
+                c("direction", "interaction_limit")
+            }
+            unknown_options <- setdiff(
+                names(selection_options),
+                allowed_options
+            )
+            if (length(unknown_options) > 0) {
+                stop(
+                    "Unsupported selection option(s): ",
+                    paste(unknown_options, collapse = ", ")
                 )
             }
-            return(formula_list(frequency_col_name, capture_columns))
+
+            if (selection_method == "aic") {
+                formulas <- selection_options[["formulas"]]
+                if (is.null(formulas)) {
+                    if (is.null(capture_columns)) {
+                        stop(
+                            paste(
+                                "capture_columns is required when formulas",
+                                "are not provided."
+                            )
+                        )
+                    }
+                    formulas <- formula_list(
+                        frequency_col_name,
+                        capture_columns
+                    )
+                    selection_options[["formulas"]] <- formulas
+                }
+            } else {
+                direction <- selection_options[["direction"]]
+                if (is.null(direction)) {
+                    direction <- "both"
+                }
+                interaction_limit <- selection_options[["interaction_limit"]]
+                if (is.null(interaction_limit)) {
+                    interaction_limit <- 2
+                }
+                selection_options[["direction"]] <- match.arg(
+                    direction,
+                    c("both", "backward", "forward")
+                )
+                if (
+                    length(interaction_limit) != 1 ||
+                        !is.numeric(interaction_limit) ||
+                        !is.finite(interaction_limit) ||
+                        interaction_limit < 1 ||
+                        interaction_limit %% 1 != 0
+                ) {
+                    stop("interaction_limit must be a positive integer.")
+                }
+                selection_options[["interaction_limit"]] <- as.integer(
+                    interaction_limit
+                )
+            }
+
+            super$initialize(
+                model = NULL,
+                capture_columns = capture_columns,
+                threshold = NULL
+            )
+            self$frequency_col_name <- frequency_col_name
+            self$model_family <- model_family
+            self$selection_method <- selection_method
+            self$selection_criterion <- selection_criterion
+            self$selection_options <- selection_options
+            return(self)
         }
     )
 )
 
 #' Plugin Options Class
-#' @description This class defines the options for the plugin estimator formula
-#' selection method in CRC. It inherits from the base Options class and
-#' includes additional parameters specific to the plugin method.
+#' @description This class defines the options for the plugin estimator.
 #'
-#' @param nuisance_function Character scalar identifying the function to use to
-#' estimate nuisance parameters.
-#' @param nfolds The number of folds to use for cross-validation when fitting
-#' the plugin estimator model.
-#'
+#' @param method Character scalar naming the estimation method.
+#' @param capture_columns Character vector naming the binary capture indicator
+#' columns.
+#' @param threshold Numeric scalar giving the probability margin.
+#' @param nuisance_function Character scalar identifying the nuisance model.
+#' @param nfolds Integer scalar giving the number of cross-validation folds.
 #' @export
 # fmt: skip
 EstimatorOptions <- R6::R6Class( # nolint: object_name_linter
@@ -297,20 +221,6 @@ EstimatorOptions <- R6::R6Class( # nolint: object_name_linter
         nfolds = NULL,
 
         #' @description Create a new \code{EstimatorOptions} instance.
-        #'
-        #' @param method Character scalar naming the estimation
-        #' method to be used.
-        #' @param capture_columns Character vector naming the binary capture
-        #' indicator columns. If NULL, all binary columns will be assumed to be
-        #' capture indicators.
-        #' @param threshold Numeric scalar giving the threshold applied by
-        #' threshold-based selection methods.
-        #' @param nuisance_function Character scalar identifying the function
-        #' to use to estimate nuisance parameters.
-        #' @param nfolds Integer scalar giving the number of cross-validation
-        #' folds.
-        #'
-        #' @return The initialized \code{EstimatorOptions} object.
         initialize = function(
             method,
             capture_columns,

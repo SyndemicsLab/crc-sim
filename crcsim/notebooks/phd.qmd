@@ -78,8 +78,8 @@ phd_sex_data <- read.csv(phd_sex_file) |>
         capture_2 = APCD,
         capture_3 = BSAS,
         capture_4 = PMP,
-        capture_5 = Matris #,
-        # capture_6 = Death
+        capture_5 = Matris,
+        capture_6 = Death
     ) |>
     mutate(
         final_sex = final_sex - 1
@@ -111,10 +111,10 @@ estimator <- EstimatorOptions$new(
         "capture_2",
         "capture_3",
         "capture_4",
-        "capture_5" #,
-        # "capture_6"
+        "capture_5",
+        "capture_6"
     ),
-    threshold = 0.005,
+    threshold = 0.02,
     nuisance_function = "logit",
     nfolds = 2
 )
@@ -130,8 +130,8 @@ captures <- c(
     "capture_2",
     "capture_3",
     "capture_4",
-    "capture_5" #,
-    # "capture_6"
+    "capture_5",
+    "capture_6"
 )
 
 ex_da <- phd_sex_data |>
@@ -143,7 +143,7 @@ internal_estimates <- drpop::popsize(
     K = length(captures),
     funcname = "logit",
     nfolds = 2,
-    margin = 0.005
+    margin = 0.02
 )$result |>
     group_by(method) |>
     summarise(
@@ -158,16 +158,17 @@ internal_estimates <- drpop::popsize(
 ```{r}
 freq_data <- select(phd_sex_data, -covariate_1)
 
-aic_options <- AICOptions$new(
-    model = "poisson",
+aic_options <- LoglinearOptions$new(
     capture_columns = c(
         "capture_1",
         "capture_2",
         "capture_3",
         "capture_4",
-        "capture_5" #,
-        # "capture_6"
-    )
+        "capture_5",
+        "capture_6"
+    ),
+    model_family = "poisson",
+    selection_method = "aic"
 )
 
 aic_results <- crc(freq_data, aic_options)[1, ]

@@ -18,31 +18,45 @@
 #'
 #' @param model_data a data frame containing the observed capture histories and
 #' a frequency column.
-#' @param opts a \code{StepwiseOptions} object specifying the options for
+#' @param opts a \\code{LoglinearOptions} object specifying the options for
 #' stepwise regression, including the model family, p-value threshold for
 #' variable inclusion, and stepwise direction.
 #'
 #' @keywords internal
 #' @export
 stepwise_selection <- function(model_data, opts, verbose = FALSE) {
-    if (!inherits(opts, "StepwiseOptions")) {
-        stop("Invalid StepwiseOptions object provided.")
+    if (!inherits(opts, "LoglinearOptions")) {
+        stop("Invalid LoglinearOptions object provided.")
     }
+    if (opts$selection_method != "stepwise") {
+        stop(
+            paste(
+                "LoglinearOptions must use",
+                "selection_method = \"stepwise\"."
+            )
+        )
+    }
+    frequency_col_name <- opts$frequency_col_name
+    capture_columns <- opts$capture_columns
+    p_threshold <- NULL
+    direction <- opts$selection_options[["direction"]]
+    model_family <- opts$model_family
+    interaction_limit <- opts$selection_options[["interaction_limit"]]
 
-    if (!is_frequency_table(model_data, opts$frequency_col_name)) {
+    if (!is_frequency_table(model_data, frequency_col_name)) {
         stop(paste(
             "Data must be a frequency table with a numeric frequency column",
-            opts$frequency_col_name
+            frequency_col_name
         ))
     }
     output <- step_regression(
         model_data,
-        opts$frequency_col_name,
-        opts$capture_columns,
-        p_threshold = opts$threshold,
-        direction = opts$direction,
-        model_family = opts$model,
-        k = opts$interaction_limit,
+        frequency_col_name,
+        capture_columns,
+        p_threshold = p_threshold,
+        direction = direction,
+        model_family = model_family,
+        k = interaction_limit,
         verbose = verbose
     )
 

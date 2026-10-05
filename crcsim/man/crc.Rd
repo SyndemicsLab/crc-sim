@@ -4,7 +4,7 @@
 \alias{crc}
 \title{Spatial Capture Re-Capture}
 \usage{
-crc(model_data, opts)
+crc(model_data, opts, seed = NULL, diagnostics = "quiet")
 }
 \arguments{
 \item{model_data}{Dataframe: A dataframe containing a frequency column and
@@ -13,7 +13,7 @@ columns indicating involvement in the given database}
 
 \item{opts}{Options Object: An object containing the options for the CRC
 estimation. This should be an instance of one of the options classes defined
-in options.R, such as AICOptions, StepwiseOptions, or EstimatorOptions.}
+in options.R, such as LoglinearOptions or EstimatorOptions.}
 }
 \description{
 A method for estimation of 'unknowns' through knowledge about

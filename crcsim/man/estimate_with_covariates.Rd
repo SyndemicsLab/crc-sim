@@ -12,7 +12,8 @@ estimate_with_covariates(
   func,
   nfolds,
   margin,
-  seed = NULL
+  seed = NULL,
+  diagnostics = "quiet"
 )
 }
 \arguments{
@@ -23,6 +24,9 @@ estimate_with_covariates(
 \item{method}{The estimation method to be used.}
 
 \item{seed}{The random seed for reproducibility (default is NULL).}
+
+\item{diagnostics}{Controls GLM fit diagnostics: "quiet", "warning", or
+"verbose".}
 
 \item{funcname}{The function used for nuisance parameter estimation.}
 }

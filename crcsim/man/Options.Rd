@@ -4,24 +4,17 @@
 \alias{Options}
 \title{CRC Options Classes}
 \description{
-This file defines the R6 classes for the options used in the
-different CRC formula selection methods. These classes encapsulate the
-parameters and settings for each method, allowing for organized and
-structured handling of the options when running CRC with different formula
-selection approaches.
+Base options shared by CRC estimation workflows.
 }
 \section{Public fields}{
   \if{html}{\out{<div class="r6-fields">}}
   \describe{
-    \item{\code{model}}{Character scalar identifying either the log-linear
-model or the nuisance function to utilize.}
+    \item{\code{model}}{Shared model or estimator method field.}
 
     \item{\code{capture_columns}}{Character vector naming the binary capture
 indicator columns.}
 
-    \item{\code{threshold}}{Numeric scalar giving the threshold applied by
-threshold-based selection methods or the margin desired by stepwise
-selection.}
+    \item{\code{threshold}}{Shared threshold or probability margin.}
   }
   \if{html}{\out{</div>}}
 }
@@ -45,18 +38,12 @@ selection.}
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{model}}{Character scalar identifying either the log-linear
-model or the nuisance function to utilize.}
+      \item{\code{model}}{Shared model or estimator method field.}
       \item{\code{capture_columns}}{Character vector naming the binary capture
 indicator columns.}
-      \item{\code{threshold}}{Numeric scalar giving the threshold applied by
-threshold-based selection methods or the margin desired by stepwise
-selection.}
+      \item{\code{threshold}}{Shared threshold or probability margin.}
     }
     \if{html}{\out{</div>}}
-  }
-  \subsection{Returns}{
-    The initialized \code{Options} object.
   }
 }
 

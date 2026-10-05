@@ -4,7 +4,7 @@
 # Created Date: 2026-05-15                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-09-04                                                    #
+# Last Modified: 2026-09-21                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -64,24 +64,24 @@ row_level_estimation <- function(
 
     n <- nrow(sim_data)
 
-    # estimates <- drpop::popsize(
-    #     sim_data,
-    #     K = length(capture_columns),
-    #     funcname = opts[["nuisance_function"]],
-    #     nfolds = opts[["nfolds"]],
-    #     margin = opts[["threshold"]]
-    # )
-
-    estimates <- estimate_capture_prob(
+    estimates <- drpop::popsize(
         sim_data,
-        length(capture_columns),
-        method = opts[["model"]],
-        func = opts[["nuisance_function"]],
+        K = length(capture_columns),
+        funcname = opts[["nuisance_function"]],
         nfolds = opts[["nfolds"]],
-        margin = opts[["threshold"]],
-        seed = seed,
-        diagnostics = diagnostics
+        margin = opts[["threshold"]]
     )
+
+    # estimates <- estimate_capture_prob(
+    #     sim_data,
+    #     length(capture_columns),
+    #     method = opts[["model"]],
+    #     func = opts[["nuisance_function"]],
+    #     nfolds = opts[["nfolds"]],
+    #     margin = opts[["threshold"]],
+    #     seed = seed,
+    #     diagnostics = diagnostics
+    # )
 
     return(estimates)
 }

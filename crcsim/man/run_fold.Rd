@@ -4,7 +4,17 @@
 \alias{run_fold}
 \title{Run a single fold of the cross-validation procedure.}
 \usage{
-run_fold(fold_split, method, j, k, margin, n_lists, n, func)
+run_fold(
+  fold_split,
+  method,
+  j,
+  k,
+  margin,
+  n_lists,
+  n,
+  func,
+  diagnostics = "quiet"
+)
 }
 \arguments{
 \item{fold_split}{A list containing the training set, test set, and the
@@ -21,6 +31,8 @@ subset of indices for the current fold.}
 \item{n_lists}{The total number of capture lists.}
 
 \item{n}{The total number of observations.}
+
+\item{diagnostics}{Controls GLM fit diagnostics.}
 
 \item{nuisance_estimation_func}{The function used for nuisance parameter
 estimation.}

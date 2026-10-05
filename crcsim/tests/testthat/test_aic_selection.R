@@ -28,22 +28,22 @@ make_aic_options <- function(formulas = NULL, model = "poisson") {
         )
     }
 
-    opts <- AICOptions$new(
-        model = model,
+    opts <- LoglinearOptions$new(
         capture_columns = c("capture_1", "capture_2", "capture_3"),
-        formula = formulas,
-        frequency_col_name = "N_ID"
+        frequency_col_name = "N_ID",
+        model_family = model,
+        selection_options = list(formulas = formulas)
     )
 
     return(opts)
 }
 
-test_that("aic_selection errors when opts is not an AICOptions object", {
+test_that("aic_selection errors when opts is not a LoglinearOptions object", {
     model_data <- make_aic_fixture()
 
     expect_error(
         aic_selection(model_data, list()),
-        "Invalid AICOptions object provided"
+        "Invalid LoglinearOptions object provided"
     )
 })
 

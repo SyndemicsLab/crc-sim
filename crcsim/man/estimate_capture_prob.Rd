@@ -12,6 +12,7 @@ estimate_capture_prob(
   nfolds = 5,
   margin = 0.005,
   seed = NULL,
+  diagnostics = "quiet",
   ...
 )
 }
@@ -30,6 +31,9 @@ estimate_capture_prob(
 \item{margin}{The margin parameter for estimation (default is 0.005).}
 
 \item{seed}{The random seed for reproducibility (default is NULL).}
+
+\item{diagnostics}{Controls GLM fit diagnostics: "quiet" (default),
+"warning", or "verbose".}
 
 \item{...}{Additional arguments passed to the nuisance estimation function.}
 }
