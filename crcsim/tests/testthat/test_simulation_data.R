@@ -1,5 +1,10 @@
 test_that("simulate_data returns complete and observed simulation views", {
-    result <- simulate_data(100, 3, p_captures = rep(0.5, 3), seed = 1)
+    result <- simulate_data(
+        100,
+        3,
+        base = homogeneous_capture_spec(rep(0.5, 3)),
+        seed = 1
+    )
     capture_columns <- result$metadata$capture_columns
 
     expect_s3_class(result, "crcsim_simulation")
@@ -51,9 +56,8 @@ test_that("simulate_data supports list-specific covariate capture models", {
 
     result <- simulate_data(
         n_individuals = 100,
-        covariate_ranges = covariate_ranges,
-        alpha = alpha,
-        beta = beta,
+        n_captures = 3,
+        base = covariate_capture_spec(covariate_ranges, alpha, beta),
         seed = 1
     )
 
@@ -79,36 +83,30 @@ test_that("simulate_data validates covariate capture model arguments", {
     )
 
     expect_error(
-        simulate_data(10, alpha = 0, beta = beta),
-        "covariate_ranges is required"
+        covariate_capture_spec(ranges, 0, beta),
+        "one column for each covariate"
     )
     expect_error(
-        simulate_data(
-            10,
-            n_captures = 2,
-            p_captures = c(0.5, 0.5),
-            covariate_ranges = ranges,
-            alpha = c(0, 0),
-            beta = rbind(c(0.2), c(0.4))
-        ),
-        "cannot be supplied"
-    )
-    expect_error(
-        simulate_data(
-            10,
-            n_captures = 2,
-            covariate_ranges = ranges,
-            alpha = c(0, 0),
-            beta = matrix(c(0.2, 0.4), nrow = 1)
+        covariate_capture_spec(
+            ranges,
+            c(0, 0),
+            matrix(c(0.2, 0.4), nrow = 1)
         ),
         "one row"
     )
     expect_error(
-        simulate_data(
-            10,
-            covariate_ranges = ranges,
-            alpha = 0,
-            beta = matrix(c(0.2, 0.4), nrow = 1)
+        covariate_capture_spec(
+            ranges,
+            c(0, 0),
+            matrix(c(0.2, 0.4), nrow = 1)
+        ),
+        "one row"
+    )
+    expect_error(
+        covariate_capture_spec(
+            ranges,
+            0,
+            matrix(c(0.2, 0.4), nrow = 1)
         ),
         "one column for each covariate"
     )
@@ -118,8 +116,8 @@ test_that("simulate_data supports latent heterogeneity", {
     result <- simulate_data(
         n_individuals = 2000,
         n_captures = 3,
-        p_captures = rep(0.5, 3),
-        latent_sd = 1,
+        base = homogeneous_capture_spec(rep(0.5, 3)),
+        heterogeneity = continuous_heterogeneity_spec(1),
         seed = 6
     )
 
@@ -138,9 +136,8 @@ test_that("simulate_data supports direct pairwise dependence", {
     result <- simulate_data(
         n_individuals = 2000,
         n_captures = 3,
-        p_captures = rep(0.5, 3),
-        dependence_pair = c(1, 2),
-        dependence_strength = 2,
+        base = homogeneous_capture_spec(rep(0.5, 3)),
+        dependence = pairwise_dependence_spec(c(1, 2), 2),
         seed = 7
     )
     captures <- result$full_data[, c("capture_1", "capture_2")]
@@ -159,8 +156,8 @@ test_that("simulate_data supports latent class heterogeneity", {
     )
     result <- simulate_data(
         n_individuals = 2000,
-        latent_class_probabilities = c(3, 1),
-        latent_class_p_captures = class_profiles,
+        n_captures = 3,
+        heterogeneity = latent_class_spec(c(3, 1), class_profiles),
         seed = 8
     )
     summary <- summarize_simulation(
@@ -192,8 +189,8 @@ test_that("simulate_data supports graph-structured dependence", {
     result <- simulate_data(
         n_individuals = 2000,
         n_captures = 3,
-        p_captures = rep(0.5, 3),
-        dependence_edges = edges,
+        base = homogeneous_capture_spec(rep(0.5, 3)),
+        dependence = graph_dependence_spec(edges),
         seed = 9
     )
     summary <- summarize_simulation(
@@ -280,9 +277,12 @@ test_that("summarize_simulation summarizes covariate-dependent probabilities", {
     )
     simulation <- simulate_data(
         n_individuals = 40,
-        covariate_ranges = ranges,
-        alpha = c(-1, 0),
-        beta = matrix(c(0.5, -0.25, 0.2, 0.75), nrow = 2),
+        n_captures = 2,
+        base = covariate_capture_spec(
+            ranges,
+            c(-1, 0),
+            matrix(c(0.5, -0.25, 0.2, 0.75), nrow = 2)
+        ),
         seed = 5
     )
     summary <- summarize_simulation(
@@ -340,7 +340,11 @@ test_that("summarize_simulation includes numeric covariate summaries", {
     simulation <- simulate_data(
         n_individuals = 50,
         n_captures = 2,
-        covariate_ranges = ranges,
+        base = covariate_capture_spec(
+            ranges,
+            c(0, 0),
+            matrix(0, nrow = 2, ncol = 2)
+        ),
         seed = 3
     )
     summary <- summarize_simulation(

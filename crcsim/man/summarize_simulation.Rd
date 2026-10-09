@@ -21,7 +21,7 @@ binary capture columns.}
 When omitted, non-capture columns are treated as covariates.}
 
 \item{scope}{Required for raw data. One of \\code{full},
-\\code{observed_union}, or \\code{unobserved_all_zero}.}
+\\code{observed}, or \\code{unobserved}.}
 }
 \value{
 A classed list containing tidy diagnostic tables and metadata.

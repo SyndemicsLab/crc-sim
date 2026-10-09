@@ -66,7 +66,9 @@ scenario_data <- lapply(names(baseline_scenarios), function(scenario_name) {
     simulation <- simulate_data(
         n_individuals = 5000,
         n_captures = 3,
-        p_captures = baseline_scenarios[[scenario_name]],
+        base = homogeneous_capture_spec(
+            baseline_scenarios[[scenario_name]]
+        ),
         seed = 20261005
     )
     simulation$metadata$scenario_name <- scenario_name
@@ -100,9 +102,12 @@ covariate_ranges <- data.frame(
 
 covariate_simulation <- simulate_data(
     n_individuals = 5000,
-    covariate_ranges = covariate_ranges,
-    alpha = covariate_intercepts,
-    beta = covariate_coefficients,
+    n_captures = 3,
+    base = covariate_capture_spec(
+        covariate_ranges,
+        covariate_intercepts,
+        covariate_coefficients
+    ),
     seed = 20261005
 )
 
@@ -129,8 +134,8 @@ scenario_data[["covariate_dependent"]] <- covariate_simulation
 latent_simulation <- simulate_data(
     n_individuals = 5000,
     n_captures = 3,
-    p_captures = rep(0.5, 3),
-    latent_sd = 1,
+    base = homogeneous_capture_spec(rep(0.5, 3)),
+    heterogeneity = continuous_heterogeneity_spec(1),
     seed = 20261005
 )
 latent_simulation$metadata$scenario_name <- "latent_heterogeneity"
@@ -139,9 +144,8 @@ scenario_data[["latent_heterogeneity"]] <- latent_simulation
 pairwise_simulation <- simulate_data(
     n_individuals = 5000,
     n_captures = 3,
-    p_captures = rep(0.5, 3),
-    dependence_pair = c(1, 2),
-    dependence_strength = 2,
+    base = homogeneous_capture_spec(rep(0.5, 3)),
+    dependence = pairwise_dependence_spec(c(1, 2), 2),
     seed = 20261005
 )
 pairwise_simulation$metadata$scenario_name <- "direct_pairwise_dependence"
@@ -149,10 +153,13 @@ scenario_data[["direct_pairwise_dependence"]] <- pairwise_simulation
 
 class_simulation <- simulate_data(
     n_individuals = 5000,
-    latent_class_probabilities = c(0.75, 0.25),
-    latent_class_p_captures = rbind(
-        c(0.8, 0.8, 0.8),
-        c(0.2, 0.2, 0.2)
+    n_captures = 3,
+    heterogeneity = latent_class_spec(
+        c(0.75, 0.25),
+        rbind(
+            c(0.8, 0.8, 0.8),
+            c(0.2, 0.2, 0.2)
+        )
     ),
     seed = 20261005
 )
@@ -162,12 +169,12 @@ scenario_data[["latent_classes"]] <- class_simulation
 graph_simulation <- simulate_data(
     n_individuals = 5000,
     n_captures = 3,
-    p_captures = rep(0.5, 3),
-    dependence_edges = data.frame(
+    base = homogeneous_capture_spec(rep(0.5, 3)),
+    dependence = graph_dependence_spec(data.frame(
         from = c(1, 2),
         to = c(2, 3),
         strength = c(2, -2)
-    ),
+    )),
     seed = 20261005
 )
 graph_simulation$metadata$scenario_name <- "graph_dependence"
@@ -577,7 +584,7 @@ scenario_factories <- list(
         simulate_data(
             n_individuals = 5000,
             n_captures = 3,
-            p_captures = c(0.50, 0.50, 0.50),
+            base = homogeneous_capture_spec(c(0.50, 0.50, 0.50)),
             seed = seed
         )
     },
@@ -585,7 +592,7 @@ scenario_factories <- list(
         simulate_data(
             n_individuals = 5000,
             n_captures = 3,
-            p_captures = c(0.20, 0.20, 0.20),
+            base = homogeneous_capture_spec(c(0.20, 0.20, 0.20)),
             seed = seed
         )
     },
@@ -593,7 +600,7 @@ scenario_factories <- list(
         simulate_data(
             n_individuals = 5000,
             n_captures = 3,
-            p_captures = c(0.80, 0.35, 0.10),
+            base = homogeneous_capture_spec(c(0.80, 0.35, 0.10)),
             seed = seed
         )
     },
@@ -601,8 +608,8 @@ scenario_factories <- list(
         simulate_data(
             n_individuals = 5000,
             n_captures = 3,
-            p_captures = rep(0.5, 3),
-            latent_sd = 1,
+            base = homogeneous_capture_spec(rep(0.5, 3)),
+            heterogeneity = continuous_heterogeneity_spec(1),
             seed = seed
         )
     },
@@ -610,19 +617,21 @@ scenario_factories <- list(
         simulate_data(
             n_individuals = 5000,
             n_captures = 3,
-            p_captures = rep(0.5, 3),
-            dependence_pair = c(1, 2),
-            dependence_strength = 2,
+            base = homogeneous_capture_spec(rep(0.5, 3)),
+            dependence = pairwise_dependence_spec(c(1, 2), 2),
             seed = seed
         )
     },
     latent_classes = function(seed) {
         simulate_data(
             n_individuals = 5000,
-            latent_class_probabilities = c(0.75, 0.25),
-            latent_class_p_captures = rbind(
-                c(0.8, 0.8, 0.8),
-                c(0.2, 0.2, 0.2)
+            n_captures = 3,
+            heterogeneity = latent_class_spec(
+                c(0.75, 0.25),
+                rbind(
+                    c(0.8, 0.8, 0.8),
+                    c(0.2, 0.2, 0.2)
+                )
             ),
             seed = seed
         )
@@ -631,12 +640,12 @@ scenario_factories <- list(
         simulate_data(
             n_individuals = 5000,
             n_captures = 3,
-            p_captures = rep(0.5, 3),
-            dependence_edges = data.frame(
+            base = homogeneous_capture_spec(rep(0.5, 3)),
+            dependence = graph_dependence_spec(data.frame(
                 from = c(1, 2),
                 to = c(2, 3),
                 strength = c(2, -2)
-            ),
+            )),
             seed = seed
         )
     }

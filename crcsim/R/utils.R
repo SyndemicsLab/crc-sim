@@ -4,7 +4,7 @@
 # Created Date: 2026-08-28                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-09-01                                                    #
+# Last Modified: 2026-10-09                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -31,6 +31,16 @@ build_listpairs <- function(n_lists) {
         dplyr::mutate(pair = paste0(j1, ",", k1), .keep = "none") |>
         dplyr::pull(pair)
     return(result)
+}
+
+#' Validate if a value is a numeric scalar.
+#'
+#' @param x The value to check.
+#' @return TRUE if the value is a numeric scalar, FALSE otherwise.
+#'
+#' @export
+is_valid_number <- function(x) {
+    return(is.numeric(x) && length(x) == 1 && !is.na(x))
 }
 
 #' Test the overlap between two capture lists.
