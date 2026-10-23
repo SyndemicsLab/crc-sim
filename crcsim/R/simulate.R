@@ -4,7 +4,7 @@
 # Created Date: 2026-08-17                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-09-23                                                    #
+# Last Modified: 2026-10-23                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -59,7 +59,7 @@ simulate <- function(
     # internal_estimates <- lapply(
     #     c("plugin", "doubly_robust", "tmle"),
     #     function(method) {
-    #         estimate <- estimate_capture_prob(
+    #         estimate <- estimate_n(
     #             data = sim_data,
     #             n_lists = length(captures),
     #             method = method,

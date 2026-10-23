@@ -4,7 +4,7 @@
 # Created Date: 2026-08-28                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-10-09                                                    #
+# Last Modified: 2026-10-23                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -73,28 +73,6 @@ test_list_overlap <- function(l1, l2, margin, l1_name = NULL, l2_name = NULL) {
         ))
     }
     return(NULL)
-}
-
-#' Validate the capture columns contain only 0 or 1 values
-#'
-#' @param data The dataset containing capture columns.
-#' @param end The number of capture columns to validate.
-#' @param start The starting column index for the capture columns.
-#' @return NULL if all capture columns contain only 0 or 1 values; otherwise,
-#' an error is thrown.
-#'
-#' @keywords internal
-validate_binary_cols <- function(data, end, start = 1) {
-    zero_one_check <- apply(
-        data[, start:end, drop = FALSE],
-        2,
-        function(x) all(x %in% c(0, 1))
-    )
-    n_lists <- end - start + 1
-    if (sum(zero_one_check) != n_lists) {
-        return(FALSE)
-    }
-    return(TRUE)
 }
 
 #' Create a zero matrix with specified dimensions and optional row and column

@@ -2,11 +2,12 @@
 % Please edit documentation in R/simulation_data.R
 \name{simulate_data}
 \alias{simulate_data}
-\title{Construct a structured capture-recapture simulation}
+\title{Generate a full capture-recapture simulation data frame}
 \usage{
 simulate_data(
   n_individuals,
   n_captures,
+  n_covariates = 0,
   base = homogeneous_capture_spec(),
   heterogeneity = NULL,
   dependence = NULL,
@@ -31,28 +32,18 @@ simulate. This must be supplied explicitly for every simulation mode.}
 \item{seed}{numeric scalar: optional random seed for reproducible output.}
 }
 \value{
-A list with `full_data`, `observed_data`, `unobserved_data`,
-  `observed_frequency_table`, `truth`, and `metadata` components.
+A data frame with one row per simulated individual.
 }
 \description{
-Generate a complete simulated population and return both the observed
-capture histories and the known all-zero histories used as simulation truth.
-The data-generating mechanism is homogeneous conditional independence: each
-capture list has a fixed marginal capture probability and lists are sampled
-independently. When \\code{alpha} and \\code{beta} are supplied, capture
-probabilities follow list-specific logistic models conditional on generated
-covariates.
+Generate one row per individual with capture histories and generated
+covariates. The data-generating mechanism is homogeneous conditional
+independence by default: each capture list has a fixed marginal capture
+probability and lists are sampled independently. When list-specific
+covariate coefficients are supplied, capture probabilities follow logistic
+models conditional on generated covariates.
 }
 \details{
-The returned object separates the complete generated population from the
-observed union and the all-zero population component. The all-zero component
-is retained as simulation truth and is not available from an observed-only
-data frame. Fixed-probability simulations record their normalized list
-probabilities in \code{truth$p_captures}; covariate-dependent simulations
-record one true probability per individual and capture list in
-\code{truth$capture_probabilities}. Continuous heterogeneity adds a shared
-unobserved propensity, while pairwise dependence changes the second list's
-conditional log odds based on the first list's capture.
-Latent-class mode assigns each individual to an unobserved class and samples
-lists independently conditional on that class.
+The returned data frame is the complete generated population and includes
+all-zero capture histories. Observed and unobserved views should be derived
+by downstream analysis code.
 }

@@ -10,7 +10,7 @@ is_valid_number(x)
 \item{x}{The value to check.}
 }
 \value{
-TRUE if the value is not a numeric scalar, FALSE otherwise.
+TRUE if the value is a numeric scalar, FALSE otherwise.
 }
 \description{
 Validate if a value is a numeric scalar.

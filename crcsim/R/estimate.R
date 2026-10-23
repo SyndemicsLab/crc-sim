@@ -1,16 +1,24 @@
 ################################################################################
-# File: capture_probability.R                                                  #
+# File: estimate.R                                                             #
 # Project: crcsim                                                              #
 # Created Date: 2026-08-26                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-09-03                                                    #
+# Last Modified: 2026-10-23                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
 ################################################################################
 
-#' Estimate capture probability with or without covariates.
+#' @title Estimate the N_pop size
+#'
+#' @description Estimate capture probability with or without covariates.
+#'
+#' @details This is the controlling estimation function that determines the
+#' estimation approach and coordinates data processing based on the data's
+#' format. First, it validates that all the capture columns are binary (0 or 1).
+#' Secondly, it validates the number of cross folds to ensure there is
+#' sufficient data. We consider "sufficient" to be 50 samples per fold.
 #'
 #' @param data The dataset containing capture columns and optionally covariates.
 #' @param n_lists The number of capture lists.
@@ -27,43 +35,35 @@
 #' size.
 #'
 #' @export
-estimate_capture_prob <- function(
+estimate_n <- function(
     data,
-    n_lists,
-    method = "doubly_robust",
-    func = "logit",
-    nfolds = 5,
-    margin = 0.005,
-    seed = NULL,
-    diagnostics = "quiet",
-    ...
+    n_capture_cols,
+    estimator_variant = log_linear_estimator(),
+    seed = NULL
 ) {
     # validate format first: check column names/order and no NA values
-    stopifnot(validate_binary_cols(data, n_lists))
-    diagnostics <- match.arg(diagnostics, c("quiet", "warning", "verbose"))
-
-    n_covariates <- ncol(data) - n_lists
-    n_obs <- nrow(data)
-
-    if (nfolds > 1 && nfolds > n_obs / 50) {
-        nfolds <- pmax(floor(n_obs / 50), 1)
-        warning(paste0(
-            "nfolds is reduced to ",
-            nfolds,
-            " to have sufficient test data.\n"
-        ))
-    }
-
-    if (n_obs < 1) {
+    stopifnot(validate_binary_cols(data, n_capture_cols))
+    if (nrow(data) < 1) {
         stop("Data must have at least one row.")
     }
 
+    if (inherits(estimator_variant, "doubly_robust_estimator")) {
+        if ((ncol(data) - n_capture_cols) < 1) {
+            warning("Doubly robust estimator chosen, but no covariates found.")
+        }
+        return(estimate_doubly_robust(data, n_capture_cols, estimator_variant))
+    } else if (inherits(estimator_variant, "log_linear_estimator")) {
+        # Call log linear estimator
+    } else {
+        stop("Invalid estimator variant provided.")
+    }
+
     if (n_covariates == 0) {
-        return(estimate_no_covariates(data, n_lists))
+        return(estimate_no_covariates(data, n_capture_cols))
     }
     return(estimate_with_covariates(
         data,
-        n_lists,
+        n_capture_cols,
         method,
         func,
         nfolds,
@@ -72,6 +72,47 @@ estimate_capture_prob <- function(
         diagnostics
     ))
 }
+
+estimate_doubly_robust <- function(
+    data,
+    n_capture_cols,
+    estimator_variant = doubly_robust_estimator()
+) {
+    if (!inherits(estimator_variant, "doubly_robust_estimator")) {
+        stop("Invalid estimator variant provided.")
+    }
+
+    n_folds <- estimator_variant$n_folds
+
+    # Sufficient data is considered 50 observations per fold
+    if (n_folds > 1 && n_folds > nrow(data) / 50) {
+        n_folds <- pmax(floor(nrow(data) / 50), 1)
+        warning(paste(
+            "n_folds is reduced to",
+            n_folds,
+            "to have sufficient test data."
+        ))
+    }
+
+    capture_cols <- paste0("capture_", seq_len(n_capture_cols))
+
+    estimates <- data |>
+        all_int_cols_to_numeric() |>
+        extract_captured_data(capture_cols) |>
+        drpop::popsize(
+            K = length(capture_columns),
+            funcname = opts[["nuisance_function"]],
+            nfolds = opts[["nfolds"]],
+            margin = opts[["threshold"]]
+        )
+    return(estimates)
+}
+
+estimate_log_linear <- function(
+    data,
+    n_capture_cols,
+    estimator_variant = log_linear_estimator()
+) {}
 
 
 #' Estimate population size without covariates.

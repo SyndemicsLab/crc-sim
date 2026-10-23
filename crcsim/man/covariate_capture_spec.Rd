@@ -2,7 +2,7 @@
 % Please edit documentation in R/simulation_specs.R
 \name{covariate_capture_spec}
 \alias{covariate_capture_spec}
-\title{Create a covariate-dependent capture specification}
+\title{Create a covariate-dependent capture specification.}
 \usage{
 covariate_capture_spec(covariate_ranges, alpha, beta)
 }
@@ -17,5 +17,16 @@ covariate_capture_spec(covariate_ranges, alpha, beta)
 An S3 object with class `covariate_capture_spec`.
 }
 \description{
-Create a covariate-dependent capture specification
+This specifies that each capture list has a probability of
+capturing an individual depending on the covariates.
+}
+\details{
+This specification assumes that each capture list's probability of
+capturing an individual is determined by a logistic model based on the
+covariates. The lists remain conditionally independent given the covariates.
+The function `covariate_capture_spec` checks that the inputs are valid and
+returns them as an S3 object with the `covariate_capture_spec` and
+`capture_spec` class types.
+
+\deqn{P(\text{capture}_j = 1 \mid x) = \operatorname{logit}^{-1}(\alpha_j + x^T \beta_j)}
 }

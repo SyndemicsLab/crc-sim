@@ -4,7 +4,7 @@
 # Created Date: 2026-05-15                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-09-21                                                    #
+# Last Modified: 2026-10-23                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -72,7 +72,7 @@ row_level_estimation <- function(
         margin = opts[["threshold"]]
     )
 
-    # estimates <- estimate_capture_prob(
+    # estimates <- estimate_n(
     #     sim_data,
     #     length(capture_columns),
     #     method = opts[["model"]],

@@ -4,21 +4,20 @@
 # Created Date: 2026-10-05                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-10-09                                                    #
+# Last Modified: 2026-10-22                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
 ################################################################################
 
-#' Construct a structured capture-recapture simulation
+#' Generate a full capture-recapture simulation data frame
 #'
-#' Generate a complete simulated population and return both the observed
-#' capture histories and the known all-zero histories used as simulation truth.
-#' The data-generating mechanism is homogeneous conditional independence: each
-#' capture list has a fixed marginal capture probability and lists are sampled
-#' independently. When \\code{alpha} and \\code{beta} are supplied, capture
-#' probabilities follow list-specific logistic models conditional on generated
-#' covariates.
+#' Generate one row per individual with capture histories and generated
+#' covariates. The data-generating mechanism is homogeneous conditional
+#' independence by default: each capture list has a fixed marginal capture
+#' probability and lists are sampled independently. When list-specific
+#' covariate coefficients are supplied, capture probabilities follow logistic
+#' models conditional on generated covariates.
 #'
 #' @param n_individuals int: number of individuals to simulate.
 #' @param n_captures int: number of binary capture columns (datasets) to
@@ -31,52 +30,105 @@
 #'   `pairwise_dependence_spec()` or `graph_dependence_spec()`.
 #' @param seed numeric scalar: optional random seed for reproducible output.
 #' @details
-#' The returned object separates the complete generated population from the
-#' observed union and the all-zero population component. The all-zero component
-#' is retained as simulation truth and is not available from an observed-only
-#' data frame. Fixed-probability simulations record their normalized list
-#' probabilities in \code{truth$p_captures}; covariate-dependent simulations
-#' record one true probability per individual and capture list in
-#' \code{truth$capture_probabilities}. Continuous heterogeneity adds a shared
-#' unobserved propensity, while pairwise dependence changes the second list's
-#' conditional log odds based on the first list's capture.
-#' Latent-class mode assigns each individual to an unobserved class and samples
-#' lists independently conditional on that class.
-#' @returns A list with `full_data`, `observed_data`, `unobserved_data`,
-#'   `observed_frequency_table`, `truth`, and `metadata` components.
+#' The returned data frame is the complete generated population and includes
+#' all-zero capture histories. Observed and unobserved views should be derived
+#' by downstream analysis code.
+#' @returns A data frame with one row per simulated individual.
 #'
-#' @export
+#' @noRd
 simulate_data <- function(
     n_individuals,
     n_captures,
+    n_covariates = 0,
     base = homogeneous_capture_spec(),
     heterogeneity = NULL,
     dependence = NULL,
     seed = NULL
 ) {
-    # Validation and Cleaning of Parameters
+    # Validation and Cleaning of General Parameters
     validate_and_set_seed(seed)
+    validate_n_individuals(n_individuals)
     validate_n_captures(n_captures)
 
-    if (!inherits(base, "capture_spec")) {
-        stop("base must be a capture specification")
-    }
-    if (inherits(base, "homogeneous_capture_spec")) {
-        if (
-            !is.null(base$p_captures) && length(base$p_captures) != n_captures
-        ) {
-            stop("p_captures must have one value per capture list")
+    p_captures <- validate_base(base, n_captures)
+    dependence_details <- validate_dependence(dependence)
+
+    # Baseline data
+    if (inherits(base, "covariate_capture_spec")) {
+        if (n_covariates != nrow(base$covariate_ranges)) {
+            stop(paste(
+                "The number of covariates specified does not match the",
+                "provided covariate ranges!!"
+            ))
         }
-        p_captures <- base$p_captures
-    } else if (inherits(base, "covariate_capture_spec")) {
-        if (length(base$alpha) != n_captures) {
-            stop("alpha must have one value per capture list")
-        }
-        p_captures <- NULL
+        base_state <- generate_covariate_captures(
+            n_pop = n_individuals,
+            n_captures = n_captures,
+            p_captures = NULL,
+            cov_dists = base$covariate_ranges,
+            alpha = base$alpha,
+            beta = base$beta
+        )
     } else {
-        stop("base must be homogeneous or covariate-dependent")
+        base_state <- create_dataset(
+            n_individuals = n_individuals,
+            n_captures = n_captures,
+            p_captures = p_captures,
+            covariate_ranges = data.frame(
+                distribution = rep("uniform", n_covariates),
+                p1 = rep(0.0, n_covariates),
+                p2 = rep(1.0, n_covariates),
+                dtype = rep("integer", n_covariates)
+            )
+        )
     }
 
+    # Extract the generated data and individual capture probabilities.
+    full_data <- base_state$full_data
+    capture_probabilities <- base_state$capture_probabilities %||%
+        base_state$base_capture_probabilities
+
+    if (!is.null(heterogeneity)) {
+        latent_details <- build_latent_details(
+            heterogeneity,
+            n_captures,
+            n_individuals,
+            capture_probabilities
+        )
+        capture_probabilities <- latent_details$capture_probabilities %||%
+            capture_probabilities
+    }
+
+    dependence_edges <- build_dependence_edges(
+        dependence_pair = dependence_details$dependence_pair,
+        dependence_edges = dependence_details$dependence_edges,
+        dependence_strength = dependence_details$dependence_strength
+    )
+
+    if (!is.null(heterogeneity) || !is.null(dependence)) {
+        capture_state <- sample_captures_with_dependence(
+            full_data = full_data,
+            n_individuals = n_individuals,
+            n_captures = n_captures,
+            capture_probabilities = capture_probabilities,
+            dependence_edges = dependence_edges
+        )
+        full_data <- capture_state$full_data
+    }
+
+    return(full_data)
+}
+
+#' Validate the heterogeneity specification.
+#'
+#' @param heterogeneity A heterogeneity specification object.
+#' @param n_captures Number of capture datasets and capture columns.
+#' @return A list containing validated latent class probabilities, latent class
+#' capture probabilities, and latent standard deviation.
+#'
+#' @keywords internal
+#' @noRd
+validate_heterogeneity <- function(heterogeneity, n_captures) {
     latent_class_probabilities <- NULL
     latent_class_p_captures <- NULL
     latent_sd <- 0
@@ -86,7 +138,10 @@ simulate_data <- function(
         } else if (inherits(heterogeneity, "latent_class_spec")) {
             if (ncol(heterogeneity$capture_probabilities) != n_captures) {
                 stop(
-                    "latent class probabilities need one column per capture list"
+                    paste(
+                        "latent class probabilities need one column per",
+                        "capture list"
+                    )
                 )
             }
             latent_class_probabilities <- heterogeneity$probabilities
@@ -97,7 +152,22 @@ simulate_data <- function(
             )
         }
     }
+    return(list(
+        latent_class_probabilities = latent_class_probabilities,
+        latent_class_p_captures = latent_class_p_captures,
+        latent_sd = latent_sd
+    ))
+}
 
+#' Validate the dependence specification.
+#'
+#' @param dependence A dependence specification object.
+#' @return A list containing validated dependence pair, dependence strength,
+#' and dependence edges.
+#'
+#' @keywords internal
+#' @noRd
+validate_dependence <- function(dependence) {
     dependence_pair <- NULL
     dependence_strength <- 0
     dependence_edges <- NULL
@@ -111,189 +181,73 @@ simulate_data <- function(
             stop("dependence must be a supported dependence specification")
         }
     }
-    validate_dependence_args(
-        n_captures = n_captures,
-        latent_sd = latent_sd,
+    return(list(
         dependence_pair = dependence_pair,
         dependence_strength = dependence_strength,
         dependence_edges = dependence_edges
-    )
-
-    # Baseline data (e.g. data that maintains conditional independence)
-    if (inherits(base, "covariate_capture_spec")) {
-        base_state <- generate_covariate_captures(
-            n_individuals = n_individuals,
-            n_captures = n_captures,
-            p_captures = NULL,
-            covariate_ranges = base$covariate_ranges,
-            alpha = base$alpha,
-            beta = base$beta
-        )
-    } else {
-        base_state <- generate_homogenous_captures(
-            n_individuals = n_individuals,
-            n_captures = n_captures,
-            p_captures = p_captures,
-            covariate_ranges = covariate_ranges
-        )
-    }
-
-    # Extracted default data from the base state
-    full_data <- base_state$full_data
-    class_assignments <- NULL
-    capture_probabilities <- base_state$capture_probabilities
-    if (is.null(capture_probabilities)) {
-        capture_probabilities <- base_state$base_capture_probabilities
-    }
-    latent_effects <- rep(0, n_individuals)
-    scenario <- base_state$scenario
-
-    capture_columns <- paste0("capture_", seq_len(n_captures))
-
-    # If we want to add unobserved heterogeneity (latent classes)
-    latent_class_mode <- !is.null(latent_class_probabilities)
-    if (latent_class_mode) {
-        validate_latent_class_args(
-            latent_sd,
-            latent_class_probabilities,
-            latent_class_p_captures
-        )
-
-        # Normalizing latent class probabilities just in case
-        latent_class_probabilities <- latent_class_probabilities /
-            sum(latent_class_probabilities)
-
-        latent_state <- apply_latent_classes(
-            n_individuals = n_individuals,
-            latent_class_probabilities = latent_class_probabilities,
-            latent_class_p_captures = latent_class_p_captures
-        )
-        class_assignments <- latent_state$class_assignments
-        base_capture_probabilities <- latent_state$base_capture_probabilities
-        latent_state <- apply_latent_effects(
-            n_individuals = n_individuals,
-            base_capture_probabilities = base_capture_probabilities,
-            latent_sd = latent_sd
-        )
-        capture_probabilities <- latent_state$capture_probabilities
-        latent_effects <- latent_state$latent_effects
-    } else if (latent_sd > 0) {
-        latent_state <- apply_latent_effects(
-            n_individuals = n_individuals,
-            base_capture_probabilities = capture_probabilities,
-            latent_sd = latent_sd
-        )
-        capture_probabilities <- latent_state$capture_probabilities
-        latent_effects <- latent_state$latent_effects
-    }
-
-    dependence_edges <- build_dependence_edges(
-        dependence_pair = dependence_pair,
-        dependence_edges = dependence_edges,
-        dependence_strength = dependence_strength
-    )
-
-    # If we want to add dependence between captures
-    dependence_mode <- !is.null(dependence_pair) || nrow(dependence_edges) > 0
-    mechanism_mode <- latent_class_mode || latent_sd > 0 || dependence_mode
-    if (mechanism_mode) {
-        capture_state <- sample_captures_with_dependence(
-            full_data = base_state$full_data,
-            n_individuals = n_individuals,
-            n_captures = n_captures,
-            capture_probabilities = capture_probabilities,
-            dependence_edges = dependence_edges
-        )
-        full_data <- capture_state$full_data
-        capture_probabilities <- capture_state$capture_probabilities
-    }
-
-    if (mechanism_mode) {
-        graph_mode <- is.null(dependence_pair) && nrow(dependence_edges) > 0
-        scenario <- get_scenario(
-            graph_mode,
-            latent_class_mode,
-            latent_sd,
-            dependence_pair
-        )
-    }
-
-    observed_data <- extract_captured_data(full_data, capture_columns)
-    unobserved_data <- extract_uncaptured_data(full_data, capture_columns)
-
-    result <- assemble_simulation_result(
-        full_data = full_data,
-        observed_data = observed_data,
-        unobserved_data = unobserved_data,
-        capture_columns = capture_columns,
-        n_captures = n_captures,
-        p_captures = base_state$p_captures,
-        latent_class_probabilities = latent_class_probabilities,
-        latent_class_p_captures = latent_class_p_captures,
-        class_assignments = class_assignments,
-        alpha = if (inherits(base, "covariate_capture_spec")) {
-            base$alpha
-        } else {
-            NULL
-        },
-        beta = if (inherits(base, "covariate_capture_spec")) {
-            base$beta
-        } else {
-            NULL
-        },
-        capture_probabilities = capture_probabilities,
-        latent_effects = latent_effects,
-        dependence_pair = dependence_pair,
-        dependence_strength = dependence_strength,
-        dependence_edges = dependence_edges,
-        scenario = scenario,
-        latent_sd = latent_sd,
-        latent_class_mode = latent_class_mode,
-        seed = seed
-    )
-    class(result) <- c("crcsim_simulation", "list")
-    return(result)
+    ))
 }
 
-#' Validate the number of capture datasets.
+#' Build latent details for the simulation.
 #'
+#' @param heterogeneity A heterogeneity specification object.
 #' @param n_captures Number of capture datasets and capture columns.
-#' @return Invisibly returns NULL if the value is valid; otherwise, throws an
-#'   error.
+#' @param n_individuals Number of individuals in the simulation.
+#' @param capture_probabilities Base capture probabilities for each individual.
+#' @return A list containing class assignments, latent effects, and updated
+#' capture probabilities.
 #'
 #' @keywords internal
 #' @noRd
-validate_n_captures <- function(n_captures) {
-    if (
-        is_valid_number(n_captures) ||
-            n_captures < 1 ||
-            n_captures %% 1 != 0
-    ) {
-        stop("n_captures must be a positive integer")
-    }
-    return(invisible(NULL))
-}
-
-get_scenario <- function(
-    graph_mode,
-    latent_class_mode,
-    latent_sd,
-    dependence_pair
+build_latent_details <- function(
+    heterogeneity,
+    n_captures,
+    n_individuals,
+    capture_probabilities
 ) {
-    scenario <- if (graph_mode && latent_class_mode) {
-        "latent class heterogeneity with graph dependence"
-    } else if (graph_mode) {
-        "graph-structured dependence"
-    } else if (latent_class_mode) {
-        "latent class heterogeneity"
-    } else if (latent_sd > 0 && !is.null(dependence_pair)) {
-        "latent heterogeneity with direct pairwise dependence"
-    } else if (latent_sd > 0) {
-        "continuous latent heterogeneity"
-    } else {
-        "direct pairwise dependence"
+    class_assignments <- NULL
+    latent_effects <- NULL
+
+    het_details <- validate_heterogeneity(heterogeneity, n_captures)
+
+    # If we want to add unobserved heterogeneity (latent classes)
+    if (!is.null(het_details$latent_class_probabilities)) {
+        lsd <- het_details$latent_sd
+        lcp <- het_details$latent_class_probabilities
+        lpc <- het_details$latent_class_p_captures
+        validate_latent_class_args(lsd, lcp, lpc)
+
+        # Normalizing latent class probabilities just in case
+        lcp <- lcp / sum(lcp)
+
+        l_classes <- apply_latent_classes(
+            n_individuals = n_individuals,
+            latent_class_probabilities = lcp,
+            latent_class_p_captures = lpc
+        )
+        class_assignments <- l_classes$class_assignments
+        base_capture_probabilities <- l_classes$base_capture_probabilities
+        l_effects <- apply_latent_effects(
+            n_individuals = n_individuals,
+            base_capture_probabilities = base_capture_probabilities,
+            latent_sd = lsd
+        )
+        capture_probabilities <- l_effects$capture_probabilities
+        latent_effects <- l_effects$latent_effects
+    } else if (het_details$latent_sd > 0) {
+        l_effects <- apply_latent_effects(
+            n_individuals = n_individuals,
+            base_capture_probabilities = capture_probabilities,
+            latent_sd = het_details$latent_sd
+        )
+        capture_probabilities <- l_effects$capture_probabilities
+        latent_effects <- l_effects$latent_effects
     }
-    return(scenario)
+    return(list(
+        class_assignments = class_assignments,
+        latent_effects = latent_effects,
+        capture_probabilities = capture_probabilities
+    ))
 }
 
 #' Validate and construct dependence edges.
@@ -326,140 +280,6 @@ build_dependence_edges <- function(
         )
     }
     return(dependence_edges)
-}
-
-#' Generate the baseline data. Baseline data assumes that all data is
-#' homogenous and maintains conditional independence. It is only accessible
-#' when `alpha` and `beta` parameters are not supplied to `simulate_data`.
-#'
-#' @param n_individuals Number of individuals to generate.
-#' @param n_captures Number of capture lists.
-#' @param p_captures Fixed list-specific capture probabilities.
-#' @param covariate_ranges Covariate-generation specification.
-#' @returns A list containing the generated full data, number of captures,
-#' fixed capture probabilities, capture probabilities matrix, and scenario
-#' label.
-#'
-#' @keywords internal
-#' @noRd
-generate_homogenous_captures <- function(
-    n_individuals,
-    n_captures,
-    p_captures,
-    covariate_ranges
-) {
-    if (is.null(n_captures)) {
-        stop("n_captures is required without alpha and beta")
-    }
-    full_data <- create_data(
-        n_individuals = n_individuals,
-        n_captures = n_captures,
-        p_captures = p_captures,
-        covariate_ranges = covariate_ranges
-    )
-    p_captures <- if (is.null(p_captures)) {
-        rep(0.5, n_captures)
-    } else {
-        as.numeric(p_captures)
-    }
-    return(list(
-        full_data = full_data,
-        n_captures = n_captures,
-        p_captures = p_captures,
-        capture_probabilities = NULL,
-        base_capture_probabilities = matrix(
-            rep(p_captures, each = n_individuals),
-            nrow = n_individuals,
-            ncol = n_captures
-        ),
-        scenario = "homogeneous conditional independence"
-    ))
-}
-
-#' Generate base capture data for a simulation
-#'
-#' Builds either homogeneous list probabilities or covariate-dependent
-#' logistic probabilities before latent heterogeneity or direct dependence is
-#' applied.
-#'
-#' @description This function generates capture data that depends on individual
-#' covariates through a logistic model, before any latent heterogeneity or
-#' direct dependence is applied. For individual \latex{i}, the probability
-#' of capture on list \latex{j} is given by
-#' \latex{\text{logit}^{-1}(\alpha_j + \sum_k \beta_{jk} x_{ik})}.
-#'
-#' @param n_individuals Number of individuals to generate.
-#' @param n_captures Number of capture lists supplied by the user.
-#' @param p_captures Fixed list-specific capture probabilities.
-#' @param covariate_ranges Covariate-generation specification.
-#' @param alpha List-specific logistic intercepts.
-#' @param beta List-by-covariate logistic coefficient matrix.
-#' @param covariate_mode Whether to generate covariate-dependent captures.
-#' @returns A list containing the generated data, base probabilities, capture
-#'   count, and initial scenario label.
-#'
-#' @keywords internal
-#' @noRd
-generate_covariate_captures <- function(
-    n_individuals,
-    n_captures,
-    p_captures,
-    covariate_ranges,
-    alpha,
-    beta
-) {
-    validate_covariate_capture_model(
-        n_captures = n_captures,
-        p_captures = p_captures,
-        covariate_ranges = covariate_ranges,
-        alpha = alpha,
-        beta = beta
-    )
-    covariate_data <- create_data(
-        n_individuals = n_individuals,
-        n_captures = 1,
-        p_captures = 0,
-        covariate_ranges = covariate_ranges
-    )
-    full_data <- covariate_data[
-        names(covariate_data) != "capture_1",
-        drop = FALSE
-    ]
-    covariate_columns <- grep(
-        "^covariate_",
-        names(full_data),
-        value = TRUE
-    )
-    linear_predictors <- sweep(
-        as.matrix(full_data[, covariate_columns, drop = FALSE]) %*%
-            t(beta),
-        2,
-        alpha,
-        FUN = "+"
-    )
-    capture_probabilities <- stats::plogis(linear_predictors)
-    base_capture_probabilities <- capture_probabilities
-    capture_columns <- paste0("capture_", seq_len(n_captures))
-    colnames(capture_probabilities) <- capture_columns
-    for (capture_column in capture_columns) {
-        full_data[[capture_column]] <- as.integer(stats::rbinom(
-            n = nrow(full_data),
-            size = 1,
-            prob = capture_probabilities[, capture_column]
-        ))
-    }
-    full_data <- full_data[
-        c(capture_columns, covariate_columns),
-        drop = FALSE
-    ]
-    return(list(
-        full_data = full_data,
-        n_captures = n_captures,
-        p_captures = p_captures,
-        capture_probabilities = capture_probabilities,
-        base_capture_probabilities = base_capture_probabilities,
-        scenario = "covariate-dependent conditional independence"
-    ))
 }
 
 #' Assign latent classes and their list-specific capture probabilities
@@ -601,146 +421,6 @@ sample_captures_with_dependence <- function(
     ))
 }
 
-#' Assemble the public simulation result
-#'
-#' Separates observed and all-zero records and packages data, truth, and
-#' metadata into the structure returned by `simulate_data()`.
-#'
-#' @param full_data Complete generated population.
-#' @param observed_data Records captured by at least one list.
-#' @param unobserved_data Records with an all-zero capture history.
-#' @param capture_columns Names of capture-list columns.
-#' @param n_captures Number of capture lists.
-#' @param p_captures Fixed list-specific capture probabilities.
-#' @param latent_class_probabilities Normalized latent-class probabilities.
-#' @param latent_class_p_captures Class-by-list capture-probability matrix.
-#' @param class_assignments Individual latent-class assignments.
-#' @param alpha List-specific logistic intercepts.
-#' @param beta List-by-covariate logistic coefficient matrix.
-#' @param capture_probabilities Final individual-by-list probabilities.
-#' @param latent_effects Shared latent effects by individual.
-#' @param dependence_pair Optional directly dependent pair of lists.
-#' @param dependence_strength Direct dependence strength.
-#' @param dependence_edges Directed dependence graph edges.
-#' @param scenario Resolved scenario label.
-#' @param latent_sd Latent propensity standard deviation.
-#' @param latent_class_mode Whether latent-class sampling is active.
-#' @param seed Random seed used for the simulation.
-#' @returns A list containing the simulation views, truth, and metadata.
-#'
-#' @keywords internal
-#' @noRd
-assemble_simulation_result <- function(
-    full_data,
-    observed_data,
-    unobserved_data,
-    capture_columns,
-    n_captures,
-    p_captures,
-    latent_class_probabilities,
-    latent_class_p_captures,
-    class_assignments,
-    alpha,
-    beta,
-    capture_probabilities,
-    latent_effects,
-    dependence_pair,
-    dependence_strength,
-    dependence_edges,
-    scenario,
-    latent_sd,
-    latent_class_mode,
-    seed
-) {
-    return(list(
-        full_data = full_data,
-        observed_data = observed_data,
-        unobserved_data = unobserved_data,
-        observed_frequency_table = build_contingency_table(observed_data),
-        truth = list(
-            n_total = as.integer(nrow(full_data)),
-            n_observed = as.integer(nrow(observed_data)),
-            n_unobserved = as.integer(nrow(unobserved_data)),
-            p_captures = p_captures,
-            latent_class_probabilities = latent_class_probabilities,
-            latent_class_p_captures = latent_class_p_captures,
-            class_assignments = class_assignments,
-            alpha = alpha,
-            beta = beta,
-            capture_probabilities = capture_probabilities,
-            latent_effects = latent_effects,
-            dependence_pair = dependence_pair,
-            dependence_strength = dependence_strength,
-            dependence_edges = dependence_edges
-        ),
-        metadata = list(
-            capture_columns = capture_columns,
-            n_captures = as.integer(n_captures),
-            scenario = scenario,
-            latent_sd = latent_sd,
-            latent_class_count = if (latent_class_mode) {
-                nrow(latent_class_p_captures)
-            } else {
-                NULL
-            },
-            seed = seed
-        )
-    ))
-}
-
-validate_covariate_dependent_args <- function(alpha, beta) {
-    if (!is.null(alpha) || !is.null(beta)) {
-        stop("latent classes cannot be combined with alpha and beta")
-    }
-    return(invisible(NULL))
-}
-
-#' Validate the dependence arguments
-#'
-#' @param n_captures Number of capture lists. Checks it is a positive integer.
-#' @param latent_sd Standard deviation of the latent effects. Checks it is a
-#' non-negative numeric scalar.
-#' @param dependence_pair Ordered pair of dependent capture lists.
-#' @param dependence_strength Strength of the pairwise dependence.
-#' @param dependence_edges Data frame specifying multiple dependence edges.
-#' @return Invisibly returns NULL if the arguments are valid; otherwise, throws
-#' an error.
-#'
-#' @noRd
-#' @keywords internal
-validate_dependence_args <- function(
-    n_captures,
-    latent_sd,
-    dependence_pair,
-    dependence_strength,
-    dependence_edges
-) {
-    if (is_valid_number(latent_sd) || latent_sd < 0) {
-        stop("latent_sd must be a non-negative numeric scalar")
-    }
-    if (is_valid_number(dependence_strength)) {
-        stop("dependence_strength must be a numeric scalar")
-    }
-    if (!is.null(dependence_pair) && !is.null(dependence_edges)) {
-        stop("supply either dependence_pair or dependence_edges, not both")
-    }
-    if (is.null(dependence_pair) && is.null(dependence_edges)) {
-        return(invisible(NULL))
-    }
-    if (!is.null(dependence_edges)) {
-        validate_dependence_edges(dependence_edges)
-        if (!is.null(n_captures) && any(dependence_edges$to > n_captures)) {
-            stop("dependence_edges must refer to existing capture lists")
-        }
-        return(invisible(NULL))
-    }
-    validate_dependence_pair(dependence_pair)
-    if (!is.null(n_captures) && dependence_pair[2] > n_captures) {
-        stop("dependence_pair must refer to existing capture lists")
-    }
-    return(invisible(NULL))
-}
-
 #' Validates the dependence edges has the correct structure and values. This
 #' means it has more than one row, contains numeric columns for from, to, and
 #' strength, and that the from and to columns represent ordered graph edges.
@@ -868,64 +548,6 @@ validate_latent_class_args <- function(
             any(latent_class_p_captures < 0 | latent_class_p_captures > 1)
     ) {
         stop("latent_class_p_captures must be a probability matrix")
-    }
-    return(invisible(NULL))
-}
-
-#' Validate the seed provided
-#'
-#' @param seed An integer scalar or NULL.
-#' @return Invisibly returns NULL if the seed is valid; otherwise, throws an
-#' error.
-#'
-#' @keywords internal
-#' @noRd
-validate_and_set_seed <- function(seed) {
-    if (
-        !is.null(seed) &&
-            (!is.numeric(seed) ||
-                length(seed) != 1 ||
-                is.na(seed) ||
-                seed %% 1 != 0)
-    ) {
-        stop("seed must be NULL or an integer scalar")
-    }
-    if (!is.null(seed)) {
-        set.seed(seed)
-    }
-    return(invisible(NULL))
-}
-
-validate_covariate_capture_model <- function(
-    n_captures,
-    p_captures,
-    covariate_ranges,
-    alpha,
-    beta
-) {
-    if (is.null(alpha) || is.null(beta)) {
-        stop("alpha and beta must be supplied together")
-    }
-    if (!is.null(p_captures)) {
-        stop("p_captures cannot be supplied with alpha and beta")
-    }
-    if (is.null(covariate_ranges)) {
-        stop("covariate_ranges is required with alpha and beta")
-    }
-    if (!is.numeric(alpha) || length(alpha) == 0 || anyNA(alpha)) {
-        stop("alpha must be a non-empty numeric vector without NA")
-    }
-    if (!is.numeric(beta) || !is.matrix(beta) || anyNA(beta)) {
-        stop("beta must be a numeric matrix without NA")
-    }
-    if (nrow(beta) != length(alpha)) {
-        stop("beta must have one row for each alpha value")
-    }
-    if (ncol(beta) != nrow(covariate_ranges)) {
-        stop("beta must have one column for each covariate")
-    }
-    if (is_valid_number(n_captures) || n_captures != length(alpha)) {
-        stop("n_captures must be equal to the length of alpha")
     }
     return(invisible(NULL))
 }

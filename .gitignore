@@ -3,6 +3,9 @@
 .Rproj.user/
 .quarto/
 
+*.Rdata
+*.rds
+
 *.csv
 *.png
 
