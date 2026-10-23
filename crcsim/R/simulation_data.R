@@ -4,7 +4,7 @@
 # Created Date: 2026-10-05                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-10-22                                                    #
+# Last Modified: 2026-10-23                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -428,7 +428,7 @@ sample_captures_with_dependence <- function(
 #' @param dependence_edges A data frame containing the dependence edges to
 #' validate.
 #' @return Invisibly returns NULL if the dependence edges are valid.
-#' @throws An error if the dependence edges are not valid.
+#' Throws an error if the dependence edges are not valid.
 #'
 #' @noRd
 #' @keywords internal
@@ -463,7 +463,7 @@ validate_dependence_edges <- function(dependence_edges) {
 #' @param dependence_pair A numeric vector containing the dependence pair to
 #' validate.
 #' @return Invisibly returns NULL if the dependence pair is valid.
-#' @throws An error if the dependence pair is not valid.
+#' Throws an error if the dependence pair is not valid.
 #'
 #' @noRd
 #' @keywords internal
@@ -497,7 +497,7 @@ validate_dependence_pair <- function(dependence_pair) {
 #' @param latent_class_p_captures A matrix of capture probabilities for each
 #' latent class.
 #' @return Invisibly returns NULL if the arguments are valid.
-#' @throws An error if the arguments are not valid.
+#' Throws an error if the arguments are not valid.
 #'
 #' @noRd
 #' @keywords internal

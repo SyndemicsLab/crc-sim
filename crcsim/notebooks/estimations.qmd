@@ -142,37 +142,76 @@ Run the initial population-size estimation method for each saved scenario and
 capture-list pair. Preserve the scenario metadata and known population counts
 alongside each estimate.
 
-```{r single-simulation-estimates}
-estimator_comparison <- bind_rows(lapply(names(scenario_data), function(
-  scenario_name
-) {
+```{r single-simulation-estimates-dr}
+scenario_estimations <- lapply(names(scenario_data), function(scenario_name) {
     full_data <- scenario_data[[scenario_name]]$full_data
     n_total <- nrow(full_data)
     bind_rows(lapply(names(capture_list_groups), function(group_name) {
         estimation_data <- combined_scenario_data[[scenario_name]][[group_name]]
         capture_columns <- capture_columns_for(estimation_data)
         observed <- observed_data(estimation_data, capture_columns)
-        n_observed <- nrow(observed)
-        n_unobserved <- n_total - n_observed
         estimates <- estimate_n(
-            observed[capture_columns],
-            n_lists = length(capture_columns)
+            observed,
+            n_capture_cols = 2,
+            estimator_variant = doubly_robust_estimator()
         )
-        mutate(
-            estimates,
-            listpair = group_name,
-            scenario = scenario_name,
-            n_total = n_total,
-            n_observed = n_observed,
-            n_unobserved = n_unobserved,
-            estimated_unobserved = n - n_observed,
-            total_error = n - n_total,
-            unobserved_error = estimated_unobserved - n_unobserved
-        )
+        return(estimates)
     }))
-}))
+})
 
-estimator_comparison
+scenario_estimations
+```
+
+```{r process-estimates}
+
+averaged <- lapply(scenario_estimations, function(scenario) {
+    est <- dplyr::group_by(scenario, method) |>
+        dplyr::summarize(
+            avg_n = mean(n, na.rm = TRUE),
+            avg_cil = mean(cin.l, na.rm = TRUE),
+            avg_ciu = mean(cin.u, na.rm = TRUE)
+        )
+    return(est)
+})
+
+names(averaged) <- names(combined_scenario_data)
+```
+
+```{r single-simulation-estimates-ll}
+scenario_estimations_ll <- lapply(
+    names(scenario_data), function(scenario_name) {
+        full_data <- scenario_data[[scenario_name]]$full_data
+        n_total <- nrow(full_data)
+        bind_rows(lapply(names(capture_list_groups), function(group_name) {
+            estimation_data <- create_contingency_table(
+                combined_scenario_data[[scenario_name]][[group_name]]
+            )
+            capture_columns <- capture_columns_for(estimation_data)
+            observed <- observed_data(estimation_data, capture_columns)
+            estimates <- estimate_n(
+                observed,
+                n_capture_cols = 2,
+                estimator_variant = log_linear_estimator()
+            ) |> dplyr::mutate(
+                estimate = estimate + n_total,
+                cil = cil + n_total,
+                ciu = ciu + n_total
+            )
+            return(estimates)
+        }))
+    }
+)
+
+scenario_estimations_ll
+```
+
+```{r averaged-ll}
+averaged_ll <- lapply(scenario_estimations_ll, function(scenario) {
+    est <- colMeans(scenario)
+    return(est)
+})
+
+names(averaged_ll) <- names(combined_scenario_data)
 ```
 
 # Error Decomposition

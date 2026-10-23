@@ -4,7 +4,7 @@
 # Created Date: 2026-10-09                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-10-22                                                    #
+# Last Modified: 2026-10-23                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -99,7 +99,7 @@ homogeneous_scenario <- function(capture_probs = NULL, n_covariates = 0) {
 #'      \operatorname{logit}^{-1}(\alpha_j + x^T \beta_j)
 #' }
 #'
-#' @example
+#' @examples
 #' ccs_one <- covariate_capture_spec(
 #'     covariate_ranges = data.frame(
 #'         distribution = c("uniform", "uniform"),

@@ -1,10 +1,10 @@
 ################################################################################
 # File: stepwise_selection.R                                                   #
-# Project: crc-sim                                                             #
+# Project: crcsim                                                              #
 # Created Date: 2026-05-14                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-16                                                    #
+# Last Modified: 2026-10-23                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -24,43 +24,46 @@
 #'
 #' @keywords internal
 #' @export
-stepwise_selection <- function(model_data, opts, verbose = FALSE) {
-    if (!inherits(opts, "LoglinearOptions")) {
-        stop("Invalid LoglinearOptions object provided.")
+stepwise_selection <- function(
+    data,
+    n_capture_cols,
+    estimator_variant = log_linear_estimator(
+        selection = "stepwise",
+        selection_opts = list(direction = "both", interaction_limit = 2)
+    )
+) {
+    if (estimator_variant$selection != "stepwise") {
+        stop("Invalid selection method for stepwise selection.")
     }
-    if (opts$selection_method != "stepwise") {
-        stop(
-            paste(
-                "LoglinearOptions must use",
-                "selection_method = \"stepwise\"."
-            )
-        )
-    }
-    frequency_col_name <- opts$frequency_col_name
-    capture_columns <- opts$capture_columns
+    freq_col_name <- estimator_variant$freq_col_name
+    direction <- estimator_variant$selection_opts[["direction"]]
+    model_family <- estimator_variant$model_family
+    interaction_limit <- estimator_variant$selection_opts[["interaction_limit"]]
+    capture_cols <- paste0("capture_", seq_len(n_capture_cols))
     p_threshold <- NULL
-    direction <- opts$selection_options[["direction"]]
-    model_family <- opts$model_family
-    interaction_limit <- opts$selection_options[["interaction_limit"]]
 
-    if (!is_frequency_table(model_data, frequency_col_name)) {
+    if (is.null(estimator_variant$selection_opts[["verbose"]])) {
+        verbose <- FALSE
+    } else {
+        verbose <- estimator_variant$selection_opts[["verbose"]]
+    }
+
+    if (!is_frequency_table(data, freq_col_name)) {
         stop(paste(
             "Data must be a frequency table with a numeric frequency column",
-            frequency_col_name
+            freq_col_name
         ))
     }
-    output <- step_regression(
-        model_data,
-        frequency_col_name,
-        capture_columns,
+    return(step_regression(
+        data,
+        freq_col_name,
+        capture_cols,
         p_threshold = p_threshold,
         direction = direction,
         model_family = model_family,
         k = interaction_limit,
         verbose = verbose
-    )
-
-    return(output)
+    ))
 }
 
 

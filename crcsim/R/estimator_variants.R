@@ -81,12 +81,14 @@ doubly_robust_estimator <- function(
 #' @param criterion Information criterion to use, either "AIC" or "BIC"
 #' (default is "AIC").
 #' @param freq_col_name Column name for frequency counts (default is "N_ID").
-#' @param stepwise_opts List of options for stepwise model selection (default
-#' is an empty list). Optional parameters include:
+#' @param selection_opts List of options for model selection (default is an
+#' empty list). Optional parameters include:
 #' - `direction`: Direction of stepwise selection, either "both", "forward", or
 #'  "backward" (default is "both").
 #' - `interaction_limit`: Maximum number of interactions allowed in the model
 #'  (default is 1).
+#' - `formulas`: A list of formula objects specifying the models to fit and
+#'  compare using AIC.
 #'
 #' @return A log linear estimator object of class "log_linear_estimator" and
 #' "estimator".
@@ -97,7 +99,7 @@ log_linear_estimator <- function(
     selection = "aic",
     criterion = "AIC",
     freq_col_name = "N_ID",
-    stepwise_opts = list()
+    selection_opts = list()
 ) {
     model_family <- match.arg(model_family, c("poisson", "negbin"))
     selection <- match.arg(selection, c("aic", "stepwise"))
@@ -109,7 +111,7 @@ log_linear_estimator <- function(
         selection = selection,
         criterion = criterion,
         freq_col_name = freq_col_name,
-        stepwise_opts = stepwise_opts
+        selection_opts = selection_opts
     )
     class(estim) <- c("log_linear_estimator", "estimator")
     return(estim)

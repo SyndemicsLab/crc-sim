@@ -52,7 +52,7 @@ validate_n_capture_cols <- function(n_capture_cols) {
 #' @description Function to validate that a given vector contains valid
 #' probabilities between 0 and 1.
 #'
-#' @params probs A vector of probabilities to validate.
+#' @param probs A vector of probabilities to validate.
 #' @return Invisibly returns NULL if the vector is valid; otherwise, throws an
 #' error.
 #'

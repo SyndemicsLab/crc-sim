@@ -1,10 +1,10 @@
 ################################################################################
 # File: aic_selection.R                                                        #
-# Project: crc-sim                                                             #
+# Project: crcsim                                                              #
 # Created Date: 2026-05-14                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-06-16                                                    #
+# Last Modified: 2026-10-23                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -28,28 +28,40 @@
 #' @importFrom dplyr bind_rows arrange
 #'
 #' @export
-aic_selection <- function(model_data, opts) {
-    if (!inherits(opts, "LoglinearOptions")) {
-        stop("Invalid LoglinearOptions object provided.")
+aic_selection <- function(
+    data,
+    n_capture_cols,
+    estimator_variant = log_linear_estimator()
+) {
+    if (estimator_variant$selection != "aic") {
+        stop("Invalid selection method for AIC selection.")
     }
-    if (opts$selection_method != "aic") {
-        stop("LoglinearOptions must use selection_method = \"aic\".")
-    }
-    formulas <- opts$selection_options[["formulas"]]
-    frequency_col_name <- opts$frequency_col_name
-    model_family <- opts$model_family
+    freq_col_name <- estimator_variant$freq_col_name
+    model_family <- estimator_variant$model_family
+    selection <- estimator_variant$selection
+    selection_opts <- estimator_variant$selection_opts
 
-    if (!is_frequency_table(model_data, frequency_col_name)) {
+    formulas <- NULL
+    if (is.null(selection_opts[["formulas"]])) {
+        formulas <- formula_list(
+            freq_col_name,
+            paste0("capture_", seq_len(n_capture_cols))
+        )
+    } else {
+        formulas <- estimator_variant$selection_opts[["formulas"]]
+    }
+
+    if (!is_frequency_table(data, freq_col_name)) {
         stop(paste(
             "Data must be a frequency table with a numeric frequency column",
-            frequency_col_name
+            freq_col_name
         ))
     }
 
     output <- map(
         formulas,
         evaluate_formula_with_aic,
-        model_data = model_data,
+        model_data = data,
         model_family = model_family
     ) |>
         bind_rows() |>

@@ -7,7 +7,7 @@ list of potential formulas to fit, fits the specified model for each
 formula, and returns a dataframe with the formula, estimate, AIC value,
 confidence interval, and any error messages for each formula.}
 \usage{
-aic_selection(model_data, opts)
+aic_selection(data, n_capture_cols, estimator_variant = log_linear_estimator())
 }
 \arguments{
 \item{model_data}{a data frame containing the observed capture histories and

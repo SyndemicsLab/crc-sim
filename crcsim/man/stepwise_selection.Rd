@@ -4,7 +4,12 @@
 \alias{stepwise_selection}
 \title{Run CRC with Stepwise Formula Selection.}
 \usage{
-stepwise_selection(model_data, opts, verbose = FALSE)
+stepwise_selection(
+  data,
+  n_capture_cols,
+  estimator_variant = log_linear_estimator(selection = "stepwise", selection_opts =
+    list(direction = "both", interaction_limit = 2))
+)
 }
 \arguments{
 \item{model_data}{a data frame containing the observed capture histories and

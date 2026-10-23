@@ -6,6 +6,9 @@
 \usage{
 validate_prob_vector(probs)
 }
+\arguments{
+\item{probs}{A vector of probabilities to validate.}
+}
 \value{
 Invisibly returns NULL if the vector is valid; otherwise, throws an
 error.
