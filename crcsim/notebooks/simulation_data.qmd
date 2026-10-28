@@ -1,0 +1,483 @@
+---
+title: "Simulation Data"
+author:
+    - name: "Matthew Carroll"
+date: "2026-10-20"
+---
+
+# Purpose
+
+This notebook is used as a data generation and analysis process. It starts by
+building simulation scenarios for eight different capture mechanisms. These
+mechanisms are intended to represent various different types of difficulties
+quantitative data can encounter. They are:
+
+- Mid-Capture: Fixed-probability, conditional-independence captures with probabilities around 0.50.
+- Low-Capture: Fixed-probability, conditional-independence captures with probabilities around 0.20.
+- Imbalanced-Capture: Fixed-probability, conditional-independence captures with a range of probabilities between 0 and 1.
+- Covariate-Dependent: Capture probabilities depend on observed covariates.
+- Latent Heterogeneity: Individual capture probabilities vary due to unobserved factors.
+- Direct Pairwise Dependence: Capture probabilities are influenced by direct interactions between specific lists.
+- Latent Classes: The population is divided into latent classes with different capture probabilities.
+- Graph Dependence: Capture probabilities are influenced by a network structure among the lists.
+
+Each dataset is stored as a full-population data frame with one row per
+individual. Observed and unobserved views are derived locally when needed for
+diagnostics or estimation.
+
+```{r setup, include=FALSE}
+devtools::load_all("..", quiet = TRUE)
+```
+
+```{r setup_two, include=FALSE}
+library(dplyr, warn.conflicts = FALSE)
+library(ggplot2, warn.conflicts = FALSE)
+
+theme_set(theme_minimal(base_size = 12))
+```
+
+## Full Data Structure
+
+Each generated data frame contains:
+
+- one row per generated individual;
+- capture columns;
+- generated covariate columns, when specified.
+
+Observed and unobserved views are derived from the full data frame. It follows
+the equation:
+$$
+n(\text{full}) = n(\text{observed}) + n(\text{unobserved})
+$$
+
+# Simulation Scenarios
+
+The scenarios can be split into several different top-level ideas:
+
+1. Baseline
+2. Covariate-Dependent
+3. Latent Heterogeneity
+
+```{r parameter_details}
+n_capture_cols <- 6
+n_covariates <- 2
+n_pop <- 5000
+
+capture_columns <- paste0("capture_", seq_len(n_capture_cols))
+covariate_columns <- paste0("covariate_", seq_len(n_covariates))
+
+cov_dists <- data.frame(
+    distribution = c("uniform", "uniform"),
+    p1 = c(0, 0),
+    p2 = c(1, 1),
+    dtype = c("integer", "integer")
+)
+```
+
+## Homogeneous Family Probabilities
+
+The first scenario builds a baseline family of fixed-probability
+conditional-independence captures. The 3 components of the baseline family are
+differentiated by the capture probabilities:
+
+1. Mid Capture: Probabilities are 0.50.
+2. Low Capture: Probabilities are 0.20.
+3. Imbalanced Capture: Probabilities are 0.80, 0.35, and 0.10.
+
+```{r scenarios}
+homogeneous_capture_probs <- list(
+    mid_capture = rep(0.5, n_capture_cols),
+    low_capture = rep(0.2, n_capture_cols),
+    imbalanced_capture = c(0.80, 0.35, 0.10, 0.50, 0.05, 0.70)
+)
+
+homogeneous_scenarios <- lapply(
+    homogeneous_capture_probs,
+    function(capture_prob) {
+        sim_scenario <- simulation_scenario(
+            base_scenario = homogeneous_scenario(capture_prob, n_covariates),
+            heterogeneity_scenario = NULL,
+            dependence_scenario = NULL
+        )
+        data_list <- create_scenario_data(
+            n_pop = n_pop,
+            n_capture_cols = n_capture_cols,
+            scenario = sim_scenario,
+            seed = 20261005
+        )
+        return(data_list)
+    }
+)
+names(homogeneous_scenarios) <- names(homogeneous_capture_probs)
+scenario_data <- homogeneous_scenarios
+```
+
+## Covariate-Dependent Captures
+
+The package helper currently applies one probability vector to every list. For
+this notebook scenario, each list receives its own logistic model while the
+underlying conditional-independence structure remains explicit:
+
+```{r covariate-scenario}
+covariate_intercepts <- c(-1.2, -0.8, -1.5, -1.0, -0.5, -1.3)
+covariate_coefficients <- rbind(
+    capture_1 = c(1.0, -0.5),
+    capture_2 = c(0.4, 0.8),
+    capture_3 = c(-0.7, 1.2),
+    capture_4 = c(0.3, -0.2),
+    capture_5 = c(-0.1, 0.4),
+    capture_6 = c(0.2, -0.3)
+)
+
+sim_scenario <- simulation_scenario(
+    base_scenario = covariate_scenario(
+        cov_dists,
+        covariate_intercepts,
+        covariate_coefficients
+    ),
+    heterogeneity_scenario = NULL,
+    dependence_scenario = NULL
+)
+
+covariate_simulation <- create_scenario_data(
+    n_pop = n_pop,
+    n_capture_cols = n_capture_cols,
+    scenario = sim_scenario,
+    seed = 20261005
+)
+
+scenario_data[["covariate_dependent"]] <- covariate_simulation
+```
+
+## Dependence Based Scenarios
+
+```{r dependence}
+sim_scenario <- simulation_scenario(
+    base_scenario = homogeneous_scenario(
+        rep(0.5, n_capture_cols),
+        n_covariates
+    ),
+    heterogeneity_scenario = NULL,
+    dependence_scenario = pairwise_dependence_scenario(c(1, 2), 0.7)
+)
+dependence_simulation <- create_scenario_data(
+    n_pop = n_pop,
+    n_capture_cols = n_capture_cols,
+    scenario = sim_scenario,
+    seed = 20261005
+)
+
+scenario_data[["direct_pairwise_dependence"]] <- dependence_simulation
+```
+
+## Heterogeneity Scenarios
+
+```{r heterogeneity}
+
+latent_simulation <- simulate_data(
+    n_individuals = 5000,
+    n_captures = 6,
+    base = homogeneous_capture_spec(rep(0.5, 6)),
+    heterogeneity = continuous_heterogeneity_spec(1),
+    seed = 20261005
+)
+scenario_data[["latent_heterogeneity"]] <- latent_simulation
+
+class_simulation <- simulate_data(
+    n_individuals = 5000,
+    n_captures = 6,
+    heterogeneity = latent_class_spec(
+        c(0.75, 0.25),
+        rbind(
+            c(0.8, 0.8, 0.8, 0.8, 0.8, 0.8),
+            c(0.2, 0.2, 0.2, 0.2, 0.2, 0.2)
+        )
+    ),
+    seed = 20261005
+)
+scenario_data[["latent_classes"]] <- class_simulation
+```
+
+```{r saving}
+data_directory_candidates <- c(
+    file.path("..", "..", "data"),
+    file.path("..", "data"),
+    "data"
+)
+data_directory <- data_directory_candidates[
+    vapply(data_directory_candidates, dir.exists, logical(1))
+][[1]]
+scenario_data_path <- file.path(data_directory, "scenario_data.rds")
+
+saveRDS(scenario_data, file = scenario_data_path)
+```
+
+The same reusable summary object provides categorical covariate proportions
+without requiring a second data-preparation path.
+
+```{r categorical-covariate-summary}
+cov_data <- scenario_summaries[["covariate_dependent"]]
+categorical_summary <- cov_data[["covariate_levels"]] |>
+    filter(
+        covariate == "covariate_group",
+        scope %in% c("full", "observed", "unobserved")
+    )
+
+ggplot(
+    categorical_summary,
+    aes(x = level, y = proportion, fill = scope)
+) +
+    geom_col(position = position_dodge(width = 0.8)) +
+    scale_y_continuous(limits = c(0, 1)) +
+    labs(
+        title = "Categorical covariate proportions by simulation scope",
+        x = "Covariate group",
+        y = "Proportion",
+        fill = "Scope"
+    )
+```
+
+# Structural Validation
+
+The all-zero histories are available only because this is a simulation. They are
+retained in the full data for evaluation and excluded when the observed view is
+derived.
+
+```{r validation}
+validation_results <- bind_rows(lapply(
+    names(scenario_summaries),
+    function(scenario_name) {
+        summary <- scenario_summaries[[scenario_name]]
+        counts <- summary$counts
+        full_count <- counts$n_individuals[counts$scope == "full"]
+        observed_count <- counts$n_individuals[
+            counts$scope == "observed"
+        ]
+        unobserved_count <- counts$n_individuals[
+            counts$scope == "unobserved"
+        ]
+
+        stopifnot(
+            observed_count + unobserved_count == full_count,
+            all(
+                summary$capture_patterns$proportion[
+                    summary$capture_patterns$scope == "full"
+                ] >=
+                    0
+            )
+        )
+
+        data.frame(
+            scenario = scenario_name,
+            n_total = full_count,
+            n_observed = observed_count,
+            n_unobserved = unobserved_count,
+            observed_fraction = observed_count / full_count
+        )
+    }
+))
+
+validation_results
+```
+
+The observed fraction is not a model estimate. It is a known simulation quantity
+used to describe how much of the generated population is visible to the
+capture-recapture estimator.
+
+This distinction is important for later estimator comparisons: an estimator
+will only see the observed union, while the simulation can evaluate its
+population error against `n_total`. The hidden all-zero count is therefore an
+evaluation target, not an input supplied to the estimator.
+
+```{r validation-plot}
+ggplot(
+    validation_results,
+    aes(x = scenario, y = observed_fraction, fill = scenario)
+) +
+    geom_col(width = 0.7, show.legend = FALSE) +
+    scale_y_continuous(limits = c(0, 1)) +
+    labs(
+        title = "Observed fraction under simulation scenarios",
+        x = NULL,
+        y = "Observed fraction"
+    )
+```
+
+# Capture-History Behavior
+
+The next plot compares the frequency of nonzero capture histories. The all-zero
+history is deliberately shown separately because it is the hidden population
+component in an observed capture-recapture dataset.
+
+```{r capture-histories}
+history_data <- bind_rows(lapply(
+    names(scenario_summaries),
+    function(scenario_name) {
+        summary <- scenario_summaries[[scenario_name]]
+        summary$capture_patterns |>
+            filter(!is.na(history)) |>
+            mutate(
+                scenario = scenario_name,
+                observed = history !=
+                    paste(
+                        rep("0", length(capture_columns)),
+                        collapse = ""
+                    )
+            )
+    }
+))
+
+ggplot(
+    history_data,
+    aes(x = history, y = n, fill = observed)
+) +
+    geom_col() +
+    facet_wrap(~scenario, scales = "free_y") +
+    scale_fill_manual(
+        values = c(`FALSE` = "#d95f02", `TRUE` = "#1b9e77"),
+        labels = c(`FALSE` = "All-zero / hidden", `TRUE` = "Observed"),
+        name = NULL
+    ) +
+    labs(
+        title = "Capture-history frequencies",
+        x = "Capture history",
+        y = "Individuals"
+    )
+```
+
+The history table is also a mechanism check. Under conditional independence,
+the observed frequencies should reflect the list probabilities and the
+covariate composition. A systematic excess or deficit in particular pairwise
+histories would be evidence to investigate dependence or latent heterogeneity.
+
+# Pairwise Overlap Diagnostics
+
+The overlap summary compares each observed pairwise intersection with the
+intersection expected from the two marginal list counts under independence.
+The ratio `observed_to_expected` is centered around 1 when the observed overlap
+agrees with that reference. Values above 1 indicate excess overlap, while
+values below 1 indicate less overlap than expected.
+
+```{r overlap-heatmap}
+overlap_data <- bind_rows(lapply(
+    names(scenario_summaries),
+    function(scenario_name) {
+        summary <- scenario_summaries[[scenario_name]]
+        summary$overlaps |>
+            filter(
+                scope %in% c("full", "observed"),
+                !is.na(observed_to_expected)
+            ) |>
+            mutate(scenario = scenario_name)
+    }
+))
+
+overlap_heatmap_data <- bind_rows(
+    overlap_data,
+    overlap_data |>
+        transmute(
+            scope,
+            capture_1 = capture_2,
+            capture_2 = capture_1,
+            observed_to_expected,
+            scenario
+        )
+) |>
+    distinct(scope, capture_1, capture_2, scenario, .keep_all = TRUE)
+
+ggplot(
+    overlap_heatmap_data,
+    aes(x = capture_1, y = capture_2, fill = observed_to_expected)
+) +
+    geom_tile() +
+    geom_label(
+        aes(label = sprintf("%.2f", observed_to_expected)),
+        size = 2.8,
+        linewidth = 0,
+        fill = scales::alpha("white", 0.75)
+    ) +
+    facet_grid(scope ~ scenario) +
+    coord_fixed() +
+    scale_fill_gradient2(
+        low = "#4575b4",
+        mid = "white",
+        high = "#d73027",
+        midpoint = 1,
+        name = "Observed / expected"
+    ) +
+    theme(
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        panel.spacing = grid::unit(1, "lines")
+    ) +
+    labs(
+        title = "Pairwise overlap relative to marginal independence",
+        x = "Capture list",
+        y = "Capture list"
+    )
+```
+
+The `full` rows are the cleanest check of the generating mechanism because all
+individuals are available. The `observed` rows answer a different
+question: they describe dependence after conditioning on at least one capture,
+so selection can create apparent association even when the lists are
+conditionally independent in the full population.
+
+The following table isolates the pair used by the direct-dependence mechanism.
+The continuous latent and latent-class scenarios should also show excess
+marginal overlap, because high-capture individuals are more likely to appear
+in both lists. The direct-dependence scenario changes the pair conditional on
+the first list and therefore represents dependence that remains after
+accounting for the generated population mechanism.
+
+```{r dependence-verification}
+dependence_verification <- bind_rows(lapply(
+    names(scenario_summaries),
+    function(scenario_name) {
+        summary <- scenario_summaries[[scenario_name]]
+        summary$overlaps |>
+            filter(
+                scope == "full",
+                capture_1 == "capture_1",
+                capture_2 == "capture_2"
+            ) |>
+            transmute(
+                scenario = scenario_name,
+                observed_to_expected,
+                jaccard
+            )
+    }
+))
+
+baseline_ratio <- dependence_verification$observed_to_expected[
+    dependence_verification$scenario == "mid_capture"
+]
+latent_ratio <- dependence_verification$observed_to_expected[
+    dependence_verification$scenario == "latent_heterogeneity"
+]
+pairwise_ratio <- dependence_verification$observed_to_expected[
+    dependence_verification$scenario == "direct_pairwise_dependence"
+]
+class_ratio <- dependence_verification$observed_to_expected[
+    dependence_verification$scenario == "latent_classes"
+]
+graph_summary <- scenario_summaries[["graph_dependence"]][["overlaps"]]
+graph_positive_ratio <- graph_summary$observed_to_expected[
+    graph_summary$scope == "full" &
+        graph_summary$capture_1 == "capture_1" &
+        graph_summary$capture_2 == "capture_2"
+]
+graph_negative_ratio <- graph_summary$observed_to_expected[
+    graph_summary$scope == "full" &
+        graph_summary$capture_1 == "capture_2" &
+        graph_summary$capture_2 == "capture_3"
+]
+stopifnot(
+    latent_ratio > baseline_ratio,
+    pairwise_ratio > baseline_ratio,
+    class_ratio > baseline_ratio,
+    graph_positive_ratio > 1,
+    graph_negative_ratio < 1
+)
+
+dependence_verification
+```
