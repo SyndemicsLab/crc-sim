@@ -4,7 +4,7 @@
 # Created Date: 2026-08-26                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-10-23                                                    #
+# Last Modified: 2026-10-27                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -79,6 +79,7 @@ estimate_n <- function(
 #' @return A list containing the estimation results and the total population
 #' size.
 #'
+#' @importFrom drpop popsize
 #' @export
 estimate_doubly_robust <- function(
     data,
@@ -115,6 +116,31 @@ estimate_doubly_robust <- function(
     return(estimates$result)
 }
 
+#' @title Estimate using Log Linear Methods
+#'
+#' @description Calculate an estimate for the total unobserved population by
+#' fitting log linear models to the observed data.
+#'
+#' @details The classic CRC literature focuses on fitting log-linear models to
+#' independent data and estimating the total population size based on the
+#' observed capture histories. This function allows users to either estimate
+#' the unobserved population by fitting one of two models (either `poisson` or
+#' `negbin`) to the observed data and then selecting either via the minimized
+#' AIC or a stepwise model selection procedure.
+#'
+#' @param data A data frame containing the observed capture histories.
+#' @param n_capture_cols The number of capture columns in the data.
+#' @param estimator_variant An object specifying the log linear estimator
+#' variant to use.
+#' @return A data frame containing the estimated total population size, the
+#' lower and upper confidence intervals, and the AIC value if applicable.
+#'
+#' @examples
+#' # Assuming `observed_data` is a data frame with capture columns
+#' estimate_log_linear(observed_data, n_capture_cols = 3)
+#'
+#' @importFrom Rcapture
+#' @export
 estimate_log_linear <- function(
     data,
     n_capture_cols,

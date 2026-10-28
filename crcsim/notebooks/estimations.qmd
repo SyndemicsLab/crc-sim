@@ -2,7 +2,15 @@
 title: "Population Estimations"
 author:
     - name: "Matthew Carroll"
-date: "2026-10-20"
+date: "2026-10-27"
+format:
+  pdf:
+    toc: true
+    geometry:
+      - top=30mm
+      - left=20mm
+execute: 
+  warning: false
 ---
 
 # Purpose
@@ -15,7 +23,6 @@ estimation to evaluate bias, uncertainty, and coverage.
 ```{r setup, include=FALSE}
 devtools::load_all("..", quiet = TRUE)
 ```
-
 
 # Setup
 
@@ -44,24 +51,40 @@ data_directory <- data_directory_candidates[
 scenario_data <- readRDS(file.path(data_directory, "scenario_data.rds"))
 ```
 
-
-## Helper Functions
-
-```{r functions, include=FALSE}
-capture_columns_for <- function(data) {
-    return(grep("^capture_", names(data), value = TRUE))
-}
-
-observed_data <- function(data, capture_columns) {
-    return(data[rowSums(data[capture_columns]) > 0, , ])
-}
-```
-
 # Combine Capture List Groups
 
 Create every unique partition of the six capture columns into complementary
 three-column groups. A grouped list is positive when any of its source lists
 captured the individual.
+
+## Setup the Capture Groups
+
+The first step to building the capture groups is to identify what the capture
+patterns should be. This means we must generate all unique combinations of the
+capture columns into two complementary groups of equal size. We start by setting
+the number of capture columns, number of columns per group, and the capture
+column names. After this, we generate all combinations of the capture columns
+into two complementary groups, ensuring the first group always contains
+`capture_1` to avoid duplicate groupings. In the case of 6 columns separated
+into groups of 3 this produces the following:
+
+| Group 1 | Group 2 |
+|---------|---------|
+| 1+2+3   | 4+5+6   |
+| 1+2+4   | 3+5+6   |
+| 1+2+5   | 3+4+6   |
+| 1+2+6   | 3+4+5   |
+| 1+3+4   | 2+5+6   |
+| 1+3+5   | 2+4+6   |
+| 1+3+6   | 2+4+5   |
+| 1+4+5   | 2+3+6   |
+| 1+4+6   | 2+3+5   |
+| 1+5+6   | 2+3+4   |
+
+Each group of capture columns is stored as a list containing two elements:
+`capture_1` and `capture_2`, each representing one of the complementary groups.
+The names are then given a shorthand name based on the indices of the capture
+columns.
 
 ```{r combine-capture-lists}
 n_capture_cols <- 6
@@ -74,12 +97,13 @@ capture_list_groups <- Filter(
         return("capture_1" %in% group)
     },
     combn(capture_columns, n_cols_per_group, simplify = FALSE)
-) |> lapply(function(first_group) {
-    return(list(
-        capture_1 = first_group,
-        capture_2 = setdiff(capture_columns, first_group)
-    ))
-})
+) |>
+    lapply(function(first_group) {
+        return(list(
+            capture_1 = first_group,
+            capture_2 = setdiff(capture_columns, first_group)
+        ))
+    })
 
 # Creating the combination names
 capture_list_group_names <- vapply(
@@ -102,7 +126,27 @@ capture_list_group_names <- vapply(
 names(capture_list_groups) <- capture_list_group_names
 ```
 
+## Combine the Capture Lists
+
+Now generated, we must combine the data into the group capture lists. This
+involves iterating through the full data, identifying whether a person is
+captured by one or more of the columns in group 1 or group 2, and then creating
+a new column indicating capture in the group.
+
 ```{r}
+# `capture_groups` is a named list of 2 lists. The name usually follows the
+# format "1+2+3,4+5+6" indicating the capture columns in each group. The 2
+# sub-lists are named `capture_1` and `capture_2` representing the two
+# complementary groups.
+#
+# Example:
+# > capture_groups
+# $`1+2+3,4+5+6`
+# $`1+2+3,4+5+6`$capture_1
+# [1] "capture_1" "capture_2" "capture_3"
+# $`1+2+3,4+5+6`$capture_2
+# [1] "capture_4" "capture_5" "capture_6"
+
 combine_capture_lists <- function(data, capture_groups) {
     source_columns <- unlist(capture_groups, use.names = FALSE)
 
@@ -110,6 +154,7 @@ combine_capture_lists <- function(data, capture_groups) {
     combined <- data[setdiff(names(data), source_columns)]
 
     # Combine the capture columns into the new grouped columns
+    # An example group_name: "1+2+3,4+5+6"
     for (group_name in names(capture_groups)) {
         combined[[group_name]] <- as.integer(
             rowSums(data[capture_groups[[group_name]]]) > 0
@@ -118,6 +163,7 @@ combine_capture_lists <- function(data, capture_groups) {
     return(combined)
 }
 
+# Loop through each scenario and combine the capture lists
 combined_scenario_data <- lapply(
     scenario_data,
     function(data) {
@@ -130,30 +176,35 @@ combined_scenario_data <- lapply(
 )
 ```
 
-# Estimation Data Contract
+# Single-Simulation Estimation
 
 Describe the boundary between estimator inputs and simulation data. For each
 scenario, estimators should receive only the observed union and its capture
 columns. The full population is retained for evaluation.
 
-# Single-Simulation Estimates
+## Doubly Robust Methods (Plug-In, TMLE, DR)
 
 Run the initial population-size estimation method for each saved scenario and
 capture-list pair. Preserve the scenario metadata and known population counts
-alongside each estimate.
+alongside each estimate. This consists of looping across each scenario and each
+capture-list group within that scenario to build an estimation.
 
 ```{r single-simulation-estimates-dr}
+# Loop over the scenarios: `mid_capture`, `low_capture`, etc.
 scenario_estimations <- lapply(names(scenario_data), function(scenario_name) {
-    full_data <- scenario_data[[scenario_name]]$full_data
-    n_total <- nrow(full_data)
+    # loop over the groups: `1+2+3,4+5+6`, `1+2+4,3+5+6`, etc.
     bind_rows(lapply(names(capture_list_groups), function(group_name) {
         estimation_data <- combined_scenario_data[[scenario_name]][[group_name]]
-        capture_columns <- capture_columns_for(estimation_data)
-        observed <- observed_data(estimation_data, capture_columns)
+        capture_columns <- get_capture_cols(estimation_data)
+        observed <- get_observed_data(estimation_data, capture_columns)
         estimates <- estimate_n(
             observed,
             n_capture_cols = 2,
-            estimator_variant = doubly_robust_estimator()
+            estimator_variant = doubly_robust_estimator(
+                estimator_func = "logit",
+                n_folds = 5,
+                margin = 0.05
+            )
         )
         return(estimates)
     }))
@@ -162,41 +213,64 @@ scenario_estimations <- lapply(names(scenario_data), function(scenario_name) {
 scenario_estimations
 ```
 
-```{r process-estimates}
 
+## Process the Scenario Estimates
+
+After calculating the estimates for each scenario and group, we need to process
+all the groups so that they produce a single estimate for each scenario. The 
+average estimate is valid because each capture group provides an independent
+view of the same pre-captured population population. The minimum of the lower 
+confidence interval and maximum of the upper confidence interval is valid
+because it ensures that the combined confidence interval covers the true
+population size across all independent capture groups.
+
+```{r process-estimates}
 averaged <- lapply(scenario_estimations, function(scenario) {
     est <- dplyr::group_by(scenario, method) |>
         dplyr::summarize(
             avg_n = mean(n, na.rm = TRUE),
-            avg_cil = mean(cin.l, na.rm = TRUE),
-            avg_ciu = mean(cin.u, na.rm = TRUE)
+            min_cil = min(cin.l, na.rm = TRUE),
+            max_ciu = max(cin.u, na.rm = TRUE)
         )
     return(est)
 })
 
 names(averaged) <- names(combined_scenario_data)
+averaged <- bind_rows(averaged, .id = "scenario")
+
+averaged
 ```
+
+## Log Linear Methods
+
+Log-linear models have a long history of being used to estimate population
+sizes. The idea is straightforward, fit a generalized linear model (GLM) to the
+observed capture histories and estimate the unobserved portion of the
+population. Then add this estimate to the observed count to get the total
+population. In this case, we select the best model via the lowest AIC.
 
 ```{r single-simulation-estimates-ll}
 scenario_estimations_ll <- lapply(
-    names(scenario_data), function(scenario_name) {
+    names(scenario_data),
+    function(scenario_name) {
         full_data <- scenario_data[[scenario_name]]$full_data
         n_total <- nrow(full_data)
         bind_rows(lapply(names(capture_list_groups), function(group_name) {
             estimation_data <- create_contingency_table(
                 combined_scenario_data[[scenario_name]][[group_name]]
             )
-            capture_columns <- capture_columns_for(estimation_data)
-            observed <- observed_data(estimation_data, capture_columns)
+            capture_columns <- get_capture_cols(estimation_data)
+            observed <- get_observed_data(estimation_data, capture_columns)
             estimates <- estimate_n(
                 observed,
                 n_capture_cols = 2,
                 estimator_variant = log_linear_estimator()
-            ) |> dplyr::mutate(
-                estimate = estimate + n_total,
-                cil = cil + n_total,
-                ciu = ciu + n_total
-            )
+            ) |>
+                dplyr::mutate(
+                    estimate = estimate + n_total,
+                    cil = cil + n_total,
+                    ciu = ciu + n_total
+                )
             return(estimates)
         }))
     }
@@ -205,61 +279,103 @@ scenario_estimations_ll <- lapply(
 scenario_estimations_ll
 ```
 
+## Averaged Log Linear Estimates
+
+Similar to the doubly robust estimators, we need to average across all grouped
+lists. This is still valid because it is the same population.
+
 ```{r averaged-ll}
 averaged_ll <- lapply(scenario_estimations_ll, function(scenario) {
-    est <- colMeans(scenario)
+    est <- data.frame(
+        method = "log_linear",
+        avg_n = mean(scenario$estimate, na.rm = TRUE),
+        min_cil = min(scenario$cil, na.rm = TRUE),
+        max_ciu = max(scenario$ciu, na.rm = TRUE)
+    )
     return(est)
 })
 
 names(averaged_ll) <- names(combined_scenario_data)
+averaged_ll <- bind_rows(averaged_ll, .id = "scenario")
+
+
+# Combine doubly robust and log-linear
+combined <- rbind(averaged, averaged_ll) |> dplyr::arrange(scenario)
+
+combined
 ```
 
-# Error Decomposition
+## Visualization
 
-Compare estimated total population size with the known total and unobserved
-counts. Explain why, for a fixed observed count,
-
-$$
-\widehat{N} - N = \widehat{N}_0 - N_0.
-$$
-
-
-# Single-Simulation Comparison
-
-Show how estimation error changes across the data-generating mechanisms and
-capture-list pairs.
+Now that we've averaged and combined them across estimation methods, we can
+visualize the results. This is best done with a bar plot showing the estimated
+population size for each scenario and method with error bars corresponding to
+the confidence intervals derived from the estimates. A red dashed line indicates
+the true population size.
 
 ```{r single-simulation-comparison}
+n_pop <- 5000 # pre-determined in `simulation_data.qmd`
+
 ggplot(
-    estimator_comparison,
-    aes(x = scenario, y = total_error, fill = listpair)
+    combined,
+    aes(x = scenario, y = avg_n, fill = method)
 ) +
     geom_col(position = position_dodge(width = 0.8)) +
-    geom_hline(yintercept = 0, linewidth = 0.4) +
+    geom_hline(yintercept = n_pop, linetype = "dashed", color = "red") +
+    geom_errorbar(
+        aes(ymin = min_cil, ymax = max_ciu),
+        position = position_dodge(width = 0.8),
+        width = 0.2
+    ) +
     labs(
-        title = "Pairwise population-size error by mechanism",
+        title = "Population estimates by scenario and method",
         x = NULL,
-        y = "Estimated total minus true total",
-        fill = "List pair"
+        y = "Estimated population size",
+        fill = "Method"
     ) +
     theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-# Repeated Estimation Design
+# Repeated Simulation Estimation
 
-Define scenario factories that reproduce the data-generating mechanisms with
-independent seeds. Document the sample size, number of capture lists,
-replicate count, and estimator settings before running the envelope.
+This follows the same logic as the single-simulation estimation section, except
+we repeat the simulation multiple times for each scenario to assess variability.
+
+The first step is to define scenario factories that reproduce the 
+data-generating mechanisms with independent seeds. The factories build scenarios
+that match a `low_capture`, `mid_capture`, `imbalanced_capture`, and 
+`covariate_dependent` capture scenario. Like the single sim, we only use 6 
+capture columns and 2 covariates. Additionally, we set it to have 100 replicates
+for each scenario and build corresponding seeds to ensure independent 
+simulations.
 
 ```{r scenario-factories}
 n_capture_cols <- 6
 n_covariates <- 2
 
+covariate_intercepts <- c(-1.2, -0.8, -1.5, -1.0, -0.5, -1.3)
+covariate_coefficients <- rbind(
+    capture_1 = c(1.0, -0.5),
+    capture_2 = c(0.4, 0.8),
+    capture_3 = c(-0.7, 1.2),
+    capture_4 = c(0.3, -0.2),
+    capture_5 = c(-0.1, 0.4),
+    capture_6 = c(0.2, -0.3)
+)
+
+cov_dists <- data.frame(
+    distribution = c("uniform", "uniform"),
+    p1 = c(0, 0),
+    p2 = c(1, 1),
+    dtype = c("integer", "integer")
+)
+
 scenario_factories <- list(
     mid_capture = function(seed) {
         sim_scenario <- simulation_scenario(
             base_scenario = homogeneous_scenario(
-                rep(0.5, n_capture_cols), n_covariates
+                rep(0.5, n_capture_cols),
+                n_covariates
             ),
             heterogeneity_scenario = NULL,
             dependence_scenario = NULL
@@ -274,7 +390,8 @@ scenario_factories <- list(
     low_capture = function(seed) {
         sim_scenario <- simulation_scenario(
             base_scenario = homogeneous_scenario(
-                rep(0.2, n_capture_cols), n_covariates
+                rep(0.2, n_capture_cols),
+                n_covariates
             ),
             heterogeneity_scenario = NULL,
             dependence_scenario = NULL
@@ -289,7 +406,25 @@ scenario_factories <- list(
     imbalanced_capture = function(seed) {
         sim_scenario <- simulation_scenario(
             base_scenario = homogeneous_scenario(
-                c(0.80, 0.35, 0.10, 0.50, 0.05, 0.70), n_covariates
+                c(0.80, 0.35, 0.10, 0.50, 0.05, 0.70),
+                n_covariates
+            ),
+            heterogeneity_scenario = NULL,
+            dependence_scenario = NULL
+        )
+        return(create_scenario_data(
+            n_pop = n_pop,
+            n_capture_cols = n_capture_cols,
+            scenario = sim_scenario,
+            seed = seed
+        ))
+    },
+    covariate_capture = function(seed) {
+        sim_scenario <- simulation_scenario(
+            base_scenario = covariate_scenario(
+                cov_dists,
+                covariate_intercepts,
+                covariate_coefficients
             ),
             heterogeneity_scenario = NULL,
             dependence_scenario = NULL
@@ -303,41 +438,84 @@ scenario_factories <- list(
     }
 )
 
-replicate_seeds <- 20261006 + seq_len(20)
+copies <- 100
+replicate_seeds <- 20261006 + seq_len(copies)
 ```
 
-# Repeated Estimation Runner
+## Repeated Estimation Runner
 
-Create the workflow that simulates one replicate, supplies only its observed
-data to the estimator, and records the corresponding simulation truth for
-evaluation.
+Again, similar to the single simulation estimation, we estimate the population
+size. We add the external loop for each replicate, but otherwise maintain the
+same workflow as before. 
+
+Because there are replicates, we also calculate coverage probability, that is,
+how often the true population size falls within the estimated confidence
+intervals.
+
+:::{.callout-note title="Resusing Capture Groups"}
+Because we again utilize 6 capture columns, we can use the same capture group
+splits as with the single sim design for consistency across simulations. It does
+not need to be recalculated.
+:::
 
 ```{r repeated-estimation-runner}
 run_estimator_replicate <- function(factory, scenario_name, replicate, seed) {
     full_data <- factory(seed)$full_data
-    capture_columns <- capture_columns_for(full_data)
-    observed <- observed_data(full_data, capture_columns)
     n_total <- nrow(full_data)
-    n_observed <- nrow(observed)
-    n_unobserved <- n_total - n_observed
-    return(
-        estimate_n(
-            observed[capture_columns],
-            n_lists = length(capture_columns)
-        ) |>
-            mutate(
-                scenario = scenario_name,
-                replicate = replicate,
-                seed = seed,
-                n_total = n_total,
-                n_observed = n_observed,
-                n_unobserved = n_unobserved,
-                bias = n - n_total,
-                relative_bias = bias / n_total,
-                coverage = ci_l <= n_total & ci_u >= n_total,
-                interval_width = ci_u - ci_l
+    return(bind_rows(lapply(
+        names(capture_list_groups),
+        function(group_name) {
+            estimation_data <- combine_capture_lists(
+                full_data,
+                capture_list_groups[[group_name]]
             )
-    )
+            capture_columns <- get_capture_cols(estimation_data)
+            observed <- get_observed_data(estimation_data, capture_columns)
+
+            dr_estimates <- estimate_n(
+                observed,
+                n_capture_cols = 2,
+                estimator_variant = doubly_robust_estimator()
+            ) |>
+                transmute(
+                    method,
+                    estimate = n,
+                    cil = cin.l,
+                    ciu = cin.u
+                )
+
+            log_linear_estimates <- create_contingency_table(
+                estimation_data
+            ) |>
+                get_observed_data(capture_columns) |>
+                estimate_n(
+                    n_capture_cols = 2,
+                    estimator_variant = log_linear_estimator()
+                ) |>
+                mutate(
+                    estimate = estimate + n_total,
+                    cil = cil + n_total,
+                    ciu = ciu + n_total,
+                    method = "log_linear"
+                ) |>
+                transmute(method, estimate, cil, ciu)
+
+            return(
+                bind_rows(dr_estimates, log_linear_estimates) |>
+                    mutate(
+                        scenario = scenario_name,
+                        replicate = replicate,
+                        seed = seed,
+                        listpair = group_name,
+                        n_total = n_total,
+                        bias = estimate - n_total,
+                        relative_bias = bias / n_total,
+                        coverage = cil <= n_total & ciu >= n_total,
+                        interval_width = ciu - cil
+                    )
+            )
+        }
+    )))
 }
 
 replicate_estimates <- bind_rows(lapply(
@@ -358,61 +536,72 @@ replicate_estimates <- bind_rows(lapply(
 ))
 ```
 
-# Estimation Performance Summary
+## Estimation Performance Summary
 
-Summarize signed bias, relative bias, RMSE, empirical confidence-interval
-coverage, and interval width by scenario, method, and list pair.
+Average estimates and interval bounds across list pairs within each replicate,
+then summarize signed bias, relative bias, estimate variability, empirical
+confidence-interval coverage, and interval width by scenario and method.
 
 ```{r performance-summary}
-replicate_summary <- replicate_estimates |>
-    group_by(scenario) |>
+replicate_method_estimates <- replicate_estimates |>
+    group_by(scenario, replicate, method) |>
+    summarise(
+        seed = first(seed),
+        n_total = first(n_total),
+        estimate = mean(estimate, na.rm = TRUE),
+        cil = min(cil, na.rm = TRUE),
+        ciu = max(ciu, na.rm = TRUE),
+        .groups = "drop"
+    ) |>
+    mutate(
+        bias = estimate - n_total,
+        relative_bias = bias / n_total,
+        coverage = cil <= n_total & ciu >= n_total,
+        interval_width = ciu - cil
+    )
+
+replicate_summary <- replicate_method_estimates |>
+    group_by(scenario, method) |>
     summarise(
         replicates = n(),
-        mean_bias = mean(bias),
-        median_bias = median(bias),
-        rmse = sqrt(mean(bias^2)),
-        coverage = mean(coverage),
-        mean_interval_width = mean(interval_width),
-        interval_width_q05 = quantile(interval_width, 0.05),
-        interval_width_q95 = quantile(interval_width, 0.95),
+        avg_n = mean(estimate, na.rm = TRUE),
+        sd_n = sd(estimate, na.rm = TRUE),
+        avg_cil = min(cil, na.rm = TRUE),
+        avg_ciu = max(ciu, na.rm = TRUE),
+        mean_bias = mean(bias, na.rm = TRUE),
+        median_bias = median(bias, na.rm = TRUE),
+        rmse = sqrt(mean(bias^2, na.rm = TRUE)),
+        coverage = mean(coverage, na.rm = TRUE),
+        mean_interval_width = mean(interval_width, na.rm = TRUE),
+        interval_width_q05 = quantile(interval_width, 0.05, na.rm = TRUE),
+        interval_width_q95 = quantile(interval_width, 0.95, na.rm = TRUE),
         .groups = "drop"
     )
 
 replicate_summary
 ```
 
-# Estimation Envelope Visualizations
+## Visualizations
 
-Present the main comparisons across mechanisms and methods. Keep plots focused
-on estimator performance; data-generating mechanism diagnostics remain in
-`simulation_data.qmd`.
+Now we do the same visualization for the repeated-estimation results.
 
 ```{r performance-visualizations}
 ggplot(
     replicate_summary,
-    aes(x = scenario, y = mean_bias)
+    aes(x = scenario, y = avg_n, fill = method)
 ) +
     geom_col(position = position_dodge(width = 0.8)) +
-    geom_hline(yintercept = 0, linewidth = 0.4) +
+    geom_hline(yintercept = n_pop, linetype = "dashed", color = "red") +
+    geom_errorbar(
+        aes(ymin = avg_cil, ymax = avg_ciu),
+        position = position_dodge(width = 0.8),
+        width = 0.2
+    ) +
     labs(
-        title = "Mean estimator bias across simulation replicates",
+        title = "100 Repeated population estimates by scenario and method",
         x = NULL,
-        y = "Mean estimated total minus true total"
+        y = "Mean estimated population size",
+        fill = "Method"
     ) +
     theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
-
-# Save Estimation Results
-
-Save replicate-level estimates and summary tables to stable output paths for
-downstream visualization and reporting.
-
-```{r save-estimation-results}
-# TODO: Write estimation results and summaries to output files.
-```
-
-# Interpretation and Limitations
-
-Record which mechanisms violate the assumptions of each method, distinguish
-simulation truth from estimator input, and document any differences between
-the single-simulation examples and the repeated-estimation envelope.

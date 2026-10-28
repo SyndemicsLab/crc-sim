@@ -92,7 +92,8 @@ homogeneous_capture_probs <- list(
 )
 
 homogeneous_scenarios <- lapply(
-    homogeneous_capture_probs, function(capture_prob) {
+    homogeneous_capture_probs,
+    function(capture_prob) {
         sim_scenario <- simulation_scenario(
             base_scenario = homogeneous_scenario(capture_prob, n_covariates),
             heterogeneity_scenario = NULL,
@@ -107,7 +108,7 @@ homogeneous_scenarios <- lapply(
         return(data_list)
     }
 )
-names(base_scenarios) <- names(base_capture_probs)
+names(homogeneous_scenarios) <- names(homogeneous_capture_probs)
 scenario_data <- homogeneous_scenarios
 ```
 
@@ -148,6 +149,27 @@ covariate_simulation <- create_scenario_data(
 scenario_data[["covariate_dependent"]] <- covariate_simulation
 ```
 
+## Dependence Based Scenarios
+
+```{r dependence}
+sim_scenario <- simulation_scenario(
+    base_scenario = homogeneous_scenario(
+        rep(0.5, n_capture_cols),
+        n_covariates
+    ),
+    heterogeneity_scenario = NULL,
+    dependence_scenario = pairwise_dependence_scenario(c(1, 2), 0.7)
+)
+dependence_simulation <- create_scenario_data(
+    n_pop = n_pop,
+    n_capture_cols = n_capture_cols,
+    scenario = sim_scenario,
+    seed = 20261005
+)
+
+scenario_data[["direct_pairwise_dependence"]] <- dependence_simulation
+```
+
 ## Heterogeneity Scenarios
 
 ```{r heterogeneity}
@@ -174,32 +196,6 @@ class_simulation <- simulate_data(
     seed = 20261005
 )
 scenario_data[["latent_classes"]] <- class_simulation
-```
-
-## Dependence Based Scenarios
-
-```{r dependence}
-pairwise_simulation <- simulate_data(
-    n_individuals = 5000,
-    n_captures = 6,
-    base = homogeneous_capture_spec(rep(0.5, 6)),
-    dependence = pairwise_dependence_spec(c(1, 2), 2),
-    seed = 20261005
-)
-scenario_data[["direct_pairwise_dependence"]] <- pairwise_simulation
-
-graph_simulation <- simulate_data(
-    n_individuals = 5000,
-    n_captures = 6,
-    base = homogeneous_capture_spec(rep(0.5, 6)),
-    dependence = graph_dependence_spec(data.frame(
-        from = c(1, 2),
-        to = c(2, 3),
-        strength = c(2, -2)
-    )),
-    seed = 20261005
-)
-scenario_data[["graph_dependence"]] <- graph_simulation
 ```
 
 ```{r saving}

@@ -4,7 +4,7 @@
 # Created Date: 2026-10-09                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-10-23                                                    #
+# Last Modified: 2026-10-28                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -141,6 +141,48 @@ covariate_scenario <- function(cov_dist, alpha, beta) {
     return(spec)
 }
 
+#' @title Create a pairwise dependence scenario
+#'
+#' @description An add on scenario to be used in conjunction with a capture
+#' sampling scenario to model pairwise dependencies between capture lists.
+#'
+#' @details This scenario allows the user to specify a pair of capture lists
+#' that have a conditional dependence, along with the strength of that
+#' dependence. The `strength` parameter represents the log-odds increase in
+#' capture probability for the second list given capture in the first list.
+#'
+#' @examples
+#' pairwise_scenario <- pairwise_dependence_scenario(
+#'     pair = c(1, 2), strength = 0.5
+#' )
+#'
+#' @param pair Ordered pair of dependent capture-list indices.
+#' @param strength Conditional-logit dependence strength. Default is 0.
+#' @returns An S3 object with class `pairwise_dependence_spec`.
+#'
+#' @export
+pairwise_dependence_scenario <- function(pair, strength = 0) {
+    validate_dependence_pair(pair)
+    if (!is.numeric(strength) || length(strength) != 1 || is.na(strength)) {
+        stop("strength must be a numeric scalar")
+    }
+    scenario <- list(pair = pair, strength = strength)
+    class(scenario) <- c("pairwise_dependence", "dependence_scenario")
+    return(scenario)
+}
+
+#' Create a graph dependence specification
+#'
+#' @param edges Data frame with `from`, `to`, and `strength` columns.
+#' @returns An S3 object with class `graph_dependence_spec`.
+#' @export
+graph_dependence_scenario <- function(edges) {
+    validate_dependence_edges(edges)
+    spec <- list(edges = edges)
+    class(spec) <- c("graph_dependence", "dependence_scenario")
+    return(spec)
+}
+
 #' Create a continuous latent heterogeneity specification
 #'
 #' @param sd Standard deviation of the shared latent propensity.
@@ -188,70 +230,4 @@ latent_class_spec <- function(probabilities, capture_probabilities) {
     )
     class(spec) <- "latent_class_spec"
     return(spec)
-}
-
-#' Create a pairwise dependence specification
-#'
-#' @param pair Ordered pair of dependent capture-list indices.
-#' @param strength Conditional-logit dependence strength.
-#' @returns An S3 object with class `pairwise_dependence_spec`.
-#' @export
-pairwise_dependence_spec <- function(pair, strength = 0) {
-    validate_spec_dependence_pair(pair)
-    if (!is.numeric(strength) || length(strength) != 1 || is.na(strength)) {
-        stop("strength must be a numeric scalar")
-    }
-    spec <- list(pair = pair, strength = strength)
-    class(spec) <- "pairwise_dependence_spec"
-    return(spec)
-}
-
-#' Create a graph dependence specification
-#'
-#' @param edges Data frame with `from`, `to`, and `strength` columns.
-#' @returns An S3 object with class `graph_dependence_spec`.
-#' @export
-graph_dependence_spec <- function(edges) {
-    validate_spec_dependence_edges(edges)
-    spec <- list(edges = edges)
-    class(spec) <- "graph_dependence_spec"
-    return(spec)
-}
-
-validate_spec_dependence_pair <- function(pair) {
-    if (
-        !is.numeric(pair) ||
-            length(pair) != 2 ||
-            anyNA(pair) ||
-            any(pair %% 1 != 0) ||
-            any(pair < 1) ||
-            pair[1] >= pair[2]
-    ) {
-        stop("pair must be an ordered pair of distinct list indices")
-    }
-    return(invisible(NULL))
-}
-
-validate_spec_dependence_edges <- function(edges) {
-    if (
-        !is.data.frame(edges) ||
-            !all(c("from", "to", "strength") %in% names(edges)) ||
-            nrow(edges) < 1
-    ) {
-        stop("edges must contain at least one from, to, and strength row")
-    }
-    if (
-        !is.numeric(edges$from) ||
-            !is.numeric(edges$to) ||
-            !is.numeric(edges$strength) ||
-            anyNA(edges) ||
-            any(edges$from %% 1 != 0) ||
-            any(edges$to %% 1 != 0) ||
-            any(edges$from < 1) ||
-            any(edges$to < 1) ||
-            any(edges$from >= edges$to)
-    ) {
-        stop("edges must contain ordered numeric graph edges")
-    }
-    return(invisible(NULL))
 }

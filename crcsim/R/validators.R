@@ -4,7 +4,7 @@
 # Created Date: 2026-10-21                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-10-23                                                    #
+# Last Modified: 2026-10-28                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -351,9 +351,70 @@ validate_covariate_scenario <- function(
     if (ncol(beta) != nrow(cov_dists)) {
         stop("beta must have one column for each covariate")
     }
-    if (!is_valid_number(n_capture_cols) || n_captures != length(alpha)) {
+    if (!is_valid_number(n_capture_cols) || n_capture_cols != length(alpha)) {
         stop("n_capture_cols must be equal to the length of alpha")
     }
     return(invisible(NULL))
 }
 # nolint end: cyclocomp_linter
+
+#' @title Validate Dependence Pairings
+#'
+#' @description Validates the specified dependence pair to ensure it is an
+#' ordered pair of distinct list indices.
+#'
+#' @param pair Numeric vector of length 2 representing the ordered pair of list
+#' indices.
+#' @return Invisibly returns NULL if the pair is valid; otherwise, throws an
+#' error.
+#'
+#' @keywords internal
+#' @noRd
+validate_dependence_pair <- function(pair) {
+    if (
+        !is.numeric(pair) ||
+            length(pair) != 2 ||
+            anyNA(pair) ||
+            any(pair %% 1 != 0) ||
+            any(pair < 1) ||
+            pair[1] >= pair[2]
+    ) {
+        stop("pair must be an ordered pair of distinct list indices")
+    }
+    return(invisible(NULL))
+}
+
+#' @title Validate Dependence Edges
+#'
+#' @description Validates the specified dependence edges to ensure they are
+#' ordered numeric graph edges.
+#'
+#' @param edges Data frame with `from`, `to`, and `strength` columns.
+#' @return Invisibly returns NULL if the edges are valid; otherwise, throws an
+#' error.
+#'
+#' @keywords internal
+#' @noRd
+validate_dependence_edges <- function(edges) {
+    if (
+        !is.data.frame(edges) ||
+            !all(c("from", "to", "strength") %in% names(edges)) ||
+            nrow(edges) < 1
+    ) {
+        stop("edges must contain at least one from, to, and strength row")
+    }
+    if (
+        !is.numeric(edges$from) ||
+            !is.numeric(edges$to) ||
+            !is.numeric(edges$strength) ||
+            anyNA(edges) ||
+            any(edges$from %% 1 != 0) ||
+            any(edges$to %% 1 != 0) ||
+            any(edges$from < 1) ||
+            any(edges$to < 1) ||
+            any(edges$from >= edges$to)
+    ) {
+        stop("edges must contain ordered numeric graph edges")
+    }
+    return(invisible(NULL))
+}

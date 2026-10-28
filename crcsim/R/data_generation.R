@@ -4,7 +4,7 @@
 # Created Date: 2026-02-17                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-10-22                                                    #
+# Last Modified: 2026-10-28                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -46,21 +46,26 @@ create_scenario_data <- function(
     validate_n_capture_cols(n_capture_cols)
     data_list <- list()
     base_scenario <- scenario$base_scenario
+    base_probs <- NULL
     if (inherits(base_scenario, "homogeneous_scenario")) {
-        data_list <- create_homogeneous_scenario(
+        probs_and_dl <- create_homogeneous_scenario(
             n_pop,
             n_capture_cols,
             base_scenario$capture_probs,
             n_covariates = base_scenario$n_covariates
         )
+        data_list <- probs_and_dl$data_list
+        base_probs <- probs_and_dl$base_probs
     } else if (inherits(base_scenario, "covariate_scenario")) {
-        data_list <- create_covariate_scenario(
+        probs_and_dl <- create_covariate_scenario(
             n_pop,
             n_capture_cols,
             base_scenario$cov_dists,
             base_scenario$alpha,
             base_scenario$beta
         )
+        data_list <- probs_and_dl$data_list
+        base_probs <- probs_and_dl$base_probs
     } else {
         stop("Unsupported base scenario")
     }
@@ -75,9 +80,18 @@ create_scenario_data <- function(
 
     if (!is.null(scenario$dependence_scenario)) {
         # Do Dependence Details
-        data_list <- add_graph_dependence_scenario(
-            data_list,
-            scenario$dependence_scenario
+        dependence_edges <- get_dependence_edges(scenario$dependence_scenario)
+        data_list$full_data <- update_captures_with_dependence(
+            data_list$full_data,
+            n_pop,
+            n_capture_cols,
+            base_probs,
+            dependence_edges
+        )
+        data_list$scenario <- paste(
+            data_list$scenario,
+            "with dependence",
+            sep = " "
         )
     }
     return(data_list)
@@ -125,8 +139,16 @@ create_homogeneous_scenario <- function(
 
     full_data <- create_dataset(n_pop, n_capture_cols, capture_probs, cov_dists)
     return(list(
-        full_data = full_data,
-        scenario = "homogeneous"
+        base_probs = matrix(
+            capture_probs,
+            nrow = n_pop,
+            ncol = n_capture_cols,
+            byrow = TRUE
+        ),
+        data_list = list(
+            full_data = full_data,
+            scenario = "homogeneous sampling"
+        )
     ))
 }
 
@@ -154,7 +176,7 @@ create_covariate_scenario <- function(
     beta
 ) {
     validate_covariate_scenario(n_capture_cols, cov_dists, alpha, beta)
-    capture_columns <- paste0("capture_", seq_len(n_captures))
+    capture_columns <- paste0("capture_", seq_len(n_capture_cols))
 
     cov_data <- create_dataset(n_pop, 1, 0, cov_dists) |>
         select(-capture_1)
@@ -193,9 +215,35 @@ create_covariate_scenario <- function(
     )
 
     return(list(
-        full_data = full_data,
-        scenario = "covariate-dependent conditional independence"
+        base_probs = capture_probabilities,
+        data_list = list(
+            full_data = full_data,
+            scenario = "covariate-dependent sampling"
+        )
     ))
+}
+
+#' @title Get Dependence Edges
+#'
+#' @description Extracts the dependence edges from a given dependence scenario.
+#'
+#' @param dependence_scenario A dependence scenario object.
+#' @returns A data frame containing the dependence edges.
+#'
+#' @keywords internal
+#' @noRd
+get_dependence_edges <- function(dependence_scenario) {
+    if (inherits(dependence_scenario, "pairwise_dependence")) {
+        return(data.frame(
+            from = dependence_scenario$pair[[1]],
+            to = dependence_scenario$pair[[2]],
+            strength = dependence_scenario$strength
+        ))
+    } else if (inherits(dependence_scenario, "graph_dependence")) {
+        return(dependence_scenario$edges)
+    } else {
+        stop("Unsupported dependence scenario type")
+    }
 }
 
 #' @title Create Dataset

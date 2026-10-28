@@ -4,7 +4,7 @@
 # Created Date: 2026-08-28                                                     #
 # Author: Matthew Carroll                                                      #
 # -----                                                                        #
-# Last Modified: 2026-10-23                                                    #
+# Last Modified: 2026-10-27                                                    #
 # Modified By: Matthew Carroll                                                 #
 # -----                                                                        #
 # Copyright (c) 2026 Syndemics Lab at Boston Medical Center                    #
@@ -92,4 +92,37 @@ zero_matrix <- function(nrow, cols, rownames = NULL) {
         dimnames = list(rownames, cols)
     )
     return(zero_mat)
+}
+
+#' Get the names of the capture columns in the dataset. Note: this assumes all capture columns start with the prefix `capture_`.
+#'
+#' @param data The dataset to inspect.
+#' @return A character vector of capture column names.
+#'
+#' @export
+get_capture_cols <- function(data) {
+    return(grep("^capture_", names(data), value = TRUE))
+}
+
+#' Get the observed data based on capture columns.
+#'
+#' @param data The dataset to filter.
+#' @param capture_columns The capture columns to consider.
+#' @return A subset of the data where at least one capture column is positive.
+#'
+#' @export
+get_observed_data <- function(data, capture_columns) {
+    return(data[rowSums(data[capture_columns]) > 0, , ])
+}
+
+#' Get the unobserved data based on capture columns. This will return all rows
+#' where the `capture_columns` are all zero.
+#'
+#' @param data The dataset to filter.
+#' @param capture_columns The capture columns to consider.
+#' @return A subset of the data where all capture columns are zero.
+#'
+#' @export
+get_unobserved_data <- function(data, capture_columns) {
+    return(data[rowSums(data[capture_columns]) == 0, , ])
 }

@@ -106,7 +106,6 @@ log_linear_estimator <- function(
     criterion <- match.arg(criterion, c("AIC", "BIC"))
 
     estim <- list(
-        n_capture_cols = n_capture_cols,
         model_family = model_family,
         selection = selection,
         criterion = criterion,
