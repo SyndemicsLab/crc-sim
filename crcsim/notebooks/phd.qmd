@@ -1,0 +1,208 @@
+---
+title: "MA Department of Public Health OUD Data Analysis"
+author:
+    - name: "Matthew Carroll"
+---
+
+# Introduction
+
+The data contained in this notebook is the property of the Massachusetts Department of Public Health (MDPH). It is intended for use solely in the context of this analysis and should not be shared or distributed without proper authorization. As such, the data and figures presented herein are not rendered publicly or made available outside the scope of this authorized analysis.
+
+## Data Overview
+
+The MA DPH provides a set of longitudinally linked data covering various aspects of opioid use disorder (OUD) within the state. This includes information on patient demographics, treatment episodes, prescription records, and health outcomes, allowing for comprehensive analysis of trends and patterns in OUD over time. This data is captured across multiple different interactions with the healthcare system. We will refer to each dataset as a capture list. Each capture list represents a distinct source of information, and by linking them together, we can obtain a more complete picture of the OUD landscape in Massachusetts.
+
+:::{.callout-note}
+The datasets are as follows:
+1. Casemix
+2. APCD
+3. BSAS
+4. PMP
+5. Matris
+6. Death
+
+And all technical documentation can be found here: [MA DPH Public Health Data Warehouse](https://www.mass.gov/info-details/public-health-data-warehouse-data-sources)
+:::
+
+```{r setup, include=FALSE}
+devtools::load_all("crcsim", quiet = TRUE)
+library(dplyr, quiet = TRUE)
+library(ggplot2, quiet = TRUE)
+library(tidyr, quiet = TRUE)
+```
+
+## Covariates
+
+We have data extracted from DPH by race, sex, and age. However, as we do not have row level data (e.g. we only have aggregates) we cannot effectively combine the covariates to create a larger multidimensional dataset that captures the intersection of these characteristics. Thus, we are limited to expanding the aggregated data according to the counts within each individual covariate category.
+
+### Sex Covariate
+
+As sex is the easiest categorical covariate to classify from the DPH and has the least suppression, we can start with it for our analysis. In the PHD, the sex data is 1-indexed (e.g. 1 for male, 2 for female). We therefore subtract 1 from each value to convert it to 0-indexed (e.g. 0 for male, 1 for female) and make it comparable to the analysis data. 
+
+```{r file-loading}
+phd_sex_file <- file.path("path", "to", "OUDOrigin_Sex_17JUL2025.csv")
+```
+
+## Extract and Prepare Sex Covariate Data
+
+Given there are 6 binary capture datasets, we have a possible $n^r$ permutations of capture patterns, where $n$ is the number of captures and $r$ is the number of binary outcomes for each capture. This results in $2^6 = 64$ possible capture patterns. Thus, if each column was represented in the data, we'd have a sum of 32 for the total number of positive capture indicators across all patterns when grouped by sex and year.
+
+```{r capture-patterns-sex}
+all_d <- read.csv(phd_sex_file) |>
+    filter(year != 2023) |>
+    select(-N_ID) |>
+    group_by(final_sex, year) |>
+    summarize(across(everything(), sum), .groups = "drop_last")
+
+suppressed <- read.csv(phd_sex_file) |>
+    filter(year != 2023) |>
+    filter(N_ID < 0) |>
+    select(-N_ID) |>
+    group_by(final_sex, year) |>
+    summarize(across(everything(), sum), .groups = "drop_last")
+
+unsuppressed <- read.csv(phd_sex_file) |>
+    filter(year != 2023) |>
+    filter(N_ID >= 0) |>
+    select(-N_ID) |>
+    group_by(final_sex, year) |>
+    summarize(across(everything(), sum), .groups = "drop_last")
+```
+
+```{r sex-covariate}
+extract_year <- 2022
+
+phd_sex_data <- read.csv(phd_sex_file) |>
+    rename(
+        capture_1 = Casemix,
+        capture_2 = APCD,
+        capture_3 = BSAS,
+        capture_4 = PMP,
+        capture_5 = Matris,
+        capture_6 = Death
+    ) |>
+    mutate(
+        final_sex = final_sex - 1
+    ) |>
+    rename(covariate_1 = final_sex) |>
+    filter(year == extract_year) |>
+    # filter(N_ID > 0) |> # Remove suppressed rows
+    mutate(N_ID = ifelse(N_ID < 0, 2, N_ID)) |> # replace suppressed rows with 2
+    select(-year)
+```
+
+## Data Exploration
+
+```{r data-exploration}
+library(ggcorrplot)
+cor_df <- cor(phd_sex_data)
+ggcorrplot(cor_df, method = "circle", type = "lower", lab = TRUE)
+```
+
+## Run CRC with DR/TMLE/PI
+
+```{r}
+expanded <- uncount(phd_sex_data, N_ID)
+
+estimator <- EstimatorOptions$new(
+    method = "plugin",
+    capture_columns = c(
+        "capture_1",
+        "capture_2",
+        "capture_3",
+        "capture_4",
+        "capture_5",
+        "capture_6"
+    ),
+    threshold = 0.02,
+    nuisance_function = "logit",
+    nfolds = 2
+)
+res_0 <- crc(
+    model_data = expanded,
+    opts = estimator
+)
+```
+
+```{r}
+captures <- c(
+    "capture_1",
+    "capture_2",
+    "capture_3",
+    "capture_4",
+    "capture_5",
+    "capture_6"
+)
+
+ex_da <- phd_sex_data |>
+    uncount(N_ID) |>
+    all_int_cols_to_numeric()
+
+internal_estimates <- drpop::popsize(
+    ex_da,
+    K = length(captures),
+    funcname = "logit",
+    nfolds = 2,
+    margin = 0.02
+)$result |>
+    group_by(method) |>
+    summarise(
+        estimate = mean(n),
+        lower_ci = min(cin.l),
+        upper_ci = max(cin.u)
+    )
+```
+
+## Run CRC with AIC Selection
+
+```{r}
+freq_data <- select(phd_sex_data, -covariate_1)
+
+aic_options <- LoglinearOptions$new(
+    capture_columns = c(
+        "capture_1",
+        "capture_2",
+        "capture_3",
+        "capture_4",
+        "capture_5",
+        "capture_6"
+    ),
+    model_family = "poisson",
+    selection_method = "aic"
+)
+
+aic_results <- crc(freq_data, aic_options)[1, ]
+estimate <- aic_results$estimate
+lci <- aic_results$lci
+uci <- aic_results$uci
+```
+
+## PHD Race
+
+```{r}
+phd_race_file <- file.path("data", "phd_race.csv")
+phd_race_data <- read.csv(phd_race_file)
+```
+
+```{r capture-patterns}
+read.csv(phd_race_file) |>
+    select(-N_ID) |>
+    group_by(final_re, year) |>
+    summarize(across(everything(), sum))
+```
+
+```{r}
+re_categories <- seq_len(5)
+re_values <- as.integer(as.character(phd_sex_data[["final_re"]]))
+re_indicators <- as.data.frame(
+    setNames(
+        lapply(re_categories, function(category) {
+            return(as.integer(re_values == category))
+        }),
+        paste0("final_re_", re_categories)
+    )
+)
+phd_sex_data <- phd_sex_data |>
+    select(-final_re) |>
+    bind_cols(re_indicators)
+```
